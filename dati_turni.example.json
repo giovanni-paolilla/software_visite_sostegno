@@ -1,0 +1,47 @@
+{
+    "schema_version": 1,
+    "fratelli": [
+        "Carlo Bianchi",
+        "Luca Ferrari",
+        "Marco Rossi",
+        "Paolo Verdi"
+    ],
+    "famiglie": [
+        "Famiglia Esposito",
+        "Famiglia Greco",
+        "Famiglia Russo"
+    ],
+    "associazioni": {
+        "Famiglia Esposito": ["Carlo Bianchi", "Luca Ferrari", "Marco Rossi"],
+        "Famiglia Greco": ["Carlo Bianchi", "Marco Rossi", "Paolo Verdi"],
+        "Famiglia Russo": ["Luca Ferrari", "Marco Rossi", "Paolo Verdi"]
+    },
+    "frequenze": {
+        "Famiglia Esposito": 2,
+        "Famiglia Greco": 2,
+        "Famiglia Russo": 1
+    },
+    "capacita": {
+        "Carlo Bianchi": 2,
+        "Luca Ferrari": 2,
+        "Marco Rossi": 3,
+        "Paolo Verdi": 2
+    },
+    "settings": {
+        "cooldown_mesi": 3
+    },
+    "storico_turni": [
+        {
+            "mese": "2025-01",
+            "created_at": "2025-01-01T10:00:00",
+            "confirmed_at": "2025-01-01T10:00:00",
+            "assegnazioni": [
+                {"famiglia": "Famiglia Esposito", "fratello": "Carlo Bianchi", "slot": 0},
+                {"famiglia": "Famiglia Esposito", "fratello": "Marco Rossi", "slot": 1},
+                {"famiglia": "Famiglia Greco", "fratello": "Paolo Verdi", "slot": 0},
+                {"famiglia": "Famiglia Greco", "fratello": "Luca Ferrari", "slot": 1},
+                {"famiglia": "Famiglia Russo", "fratello": "Marco Rossi", "slot": 0}
+            ]
+        }
+    ]
+}

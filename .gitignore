@@ -19,6 +19,9 @@ env/
 .coverage
 htmlcov/
 
+# Dati reali (nomi reali — non condividere)
+dati_turni.json
+
 # Log e dati generati
 logs/
 *.log

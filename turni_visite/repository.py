@@ -18,8 +18,6 @@ import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Union
-
 from .domain import (
     TurniVisiteError,
     EntitaNonTrovata,
@@ -31,8 +29,8 @@ from .normalization import canonicalizza_nome
 
 
 class JsonRepository:
-    def __init__(self, filename: Union[str, Path]) -> None:
-        self.filename: Union[str, Path] = filename
+    def __init__(self, filename: str | Path) -> None:
+        self.filename: str | Path = filename
         self.fratelli: set[str] = set()
         self.famiglie: set[str] = set()
         self.associazioni: dict[str, list[str]] = {}
@@ -373,11 +371,38 @@ class JsonRepository:
                 except (TypeError, ValueError):
                     cap_new[fr] = 1
 
+            # Aggiorna i nomi anche nello storico turni
+            storico_new: list[dict] = []
+            for rec in self.storico_turni:
+                if not isinstance(rec, dict):
+                    continue
+                ass_new_list: list[dict] = []
+                for a in rec.get("assegnazioni", []) or []:
+                    if not isinstance(a, dict):
+                        continue
+                    fam_a = canonicalizza_nome(a.get("famiglia", ""))
+                    fam_a = alias_map.get(fam_a, fam_a) if fam_a else None
+                    fr_a = canonicalizza_nome(a.get("fratello", ""))
+                    fr_a = alias_map.get(fr_a, fr_a) if fr_a else None
+                    if fam_a and fr_a:
+                        try:
+                            slot = int(a.get("slot", 0))
+                        except (TypeError, ValueError):
+                            slot = 0
+                        ass_new_list.append({"famiglia": fam_a, "fratello": fr_a, "slot": slot})
+                storico_new.append({
+                    "mese": rec.get("mese"),
+                    "created_at": rec.get("created_at"),
+                    "confirmed_at": rec.get("confirmed_at"),
+                    "assegnazioni": ass_new_list,
+                })
+
             self.fratelli = fr_new
             self.famiglie = fam_new
             self.associazioni = assoc_new
             self.frequenze = freq_new
             self.capacita = cap_new
+            self.storico_turni = storico_new
             self.save()
             logging.info("Dati sanificati e salvati in %s.", self.filename)
         except (TurniVisiteError, OSError):

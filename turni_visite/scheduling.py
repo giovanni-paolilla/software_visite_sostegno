@@ -2,7 +2,7 @@ import logging
 import re
 import math
 import os
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 _ORTOOLS_IMPORT_ERROR: Exception | None = None
 try:
@@ -27,7 +27,7 @@ def _require_ortools() -> None:
         )
 
 
-def validate_month_yyyy_mm(mese: str) -> str:
+def validate_month_yyyy_mm(mese: str | None) -> str:
     """Valida e normalizza un mese in formato YYYY-MM."""
     if mese is None:
         raise ValueError("Mese mancante")
@@ -183,8 +183,8 @@ def explain_infeasible(
         )
 
     M = len(mesi_sorted)
+    max_per_brother = (M + cooldown_mesi) // (cooldown_mesi + 1) if M else 0
     if M:
-        max_per_brother = (M + cooldown_mesi) // (cooldown_mesi + 1)
         for fam in sorted(famiglie):
             n = len(associazioni.get(fam, []))
             freq = frequenze.get(fam, 2)
@@ -221,7 +221,6 @@ def explain_infeasible(
 
     crit: list[tuple[int, str, int, int, int]] = []
     if M:
-        max_per_brother = (M + cooldown_mesi) // (cooldown_mesi + 1)
         for fam in sorted(famiglie):
             n = len(associazioni.get(fam, []))
             freq = frequenze.get(fam, 2)

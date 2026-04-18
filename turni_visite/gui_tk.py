@@ -12,7 +12,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from .config import DATA_FILE
-from .domain import TurniVisiteError, StoricoConflittoError
+from .domain import TurniVisiteError, StoricoConflittoError, EntitaNonTrovata
 from .logging_cfg import setup_logging
 from .pdf_export import export_pdf_mesi
 from .repository import JsonRepository
@@ -224,12 +224,15 @@ class TurniVisiteApp(tk.Tk):
         self.notebook = ttk.Notebook(self)
         self.tab_anagrafica = ttk.Frame(self.notebook)
         self.tab_pianifica = ttk.Frame(self.notebook)
+        self.tab_storico = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_anagrafica, text="Anagrafica")
         self.notebook.add(self.tab_pianifica, text="Pianificazione")
+        self.notebook.add(self.tab_storico, text="Storico")
         self.notebook.pack(fill="both", expand=True, padx=8, pady=8)
 
         self._build_tab_anagrafica()
         self._build_tab_pianifica()
+        self._build_tab_storico()
 
         self.status_var = tk.StringVar(value="")
         status_bar = ttk.Label(self, textvariable=self.status_var, anchor="w")
@@ -361,6 +364,65 @@ class TurniVisiteApp(tk.Tk):
 
         self.txt_output = ScrolledText(self.tab_pianifica, wrap="word", height=20)
         self.txt_output.pack(fill="both", expand=True, **pad)
+
+    # ------------------------------------------------------------------
+    # TAB: STORICO
+    # ------------------------------------------------------------------
+
+    def _build_tab_storico(self) -> None:
+        pad = {"padx": 6, "pady": 6}
+
+        top = ttk.Frame(self.tab_storico)
+        top.pack(fill="x", **pad)
+        ttk.Label(top, text="Mesi confermati nello storico:").pack(side="left")
+        ttk.Button(top, text="Aggiorna", command=self.refresh_storico).pack(side="left", padx=6)
+        ttk.Button(
+            top, text="Elimina selezionato", command=self.delete_storico_selected
+        ).pack(side="left")
+
+        list_frame = ttk.Frame(self.tab_storico)
+        list_frame.pack(fill="both", expand=True, **pad)
+
+        sb = ttk.Scrollbar(list_frame, orient="vertical")
+        self.list_storico = tk.Listbox(list_frame, yscrollcommand=sb.set, height=20)
+        sb.config(command=self.list_storico.yview)
+        self.list_storico.pack(side="left", fill="both", expand=True)
+        sb.pack(side="left", fill="y")
+
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+
+    def _on_tab_changed(self, _event=None) -> None:
+        selected = self.notebook.index(self.notebook.select())
+        if selected == 2:  # tab Storico
+            self.refresh_storico()
+
+    def refresh_storico(self) -> None:
+        self.list_storico.delete(0, tk.END)
+        for rec in self.repo.get_storico_turni():
+            mese = rec.get("mese", "?")
+            n = len(rec.get("assegnazioni", []))
+            confirmed = rec.get("confirmed_at", "")[:10]
+            self.list_storico.insert(tk.END, f"{mese}  ({n} assegnazioni, {confirmed})")
+
+    def delete_storico_selected(self) -> None:
+        sel = self.list_storico.curselection()
+        if not sel:
+            messagebox.showerror("Errore", "Seleziona un mese dallo storico.", parent=self)
+            return
+        text = self.list_storico.get(sel[0])
+        mese = text.split()[0]
+        if not messagebox.askyesno(
+            "Conferma",
+            f"Eliminare il mese '{mese}' dallo storico?\nL'operazione non può essere annullata.",
+            parent=self,
+        ):
+            return
+        try:
+            self.repo.delete_storico_mese(mese)
+            self.refresh_storico()
+            self.set_status(f"Mese '{mese}' rimosso dallo storico.")
+        except EntitaNonTrovata as e:
+            messagebox.showerror("Errore", str(e), parent=self)
 
     # ------------------------------------------------------------------
     # Handler anagrafica

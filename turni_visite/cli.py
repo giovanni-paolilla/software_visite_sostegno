@@ -14,7 +14,7 @@ from .weeks import parse_settimane_lista
 from .reporting import print_reports_mesi
 from .pdf_export import export_pdf_mesi
 from .service import esegui_ottimizzazione, conferma_e_salva_turni, diagnosi_infeasible
-from .domain import TurniVisiteError, DuplicatoError, EntitaNonTrovata, StoricoConflittoError
+from .domain import TurniVisiteError, StoricoConflittoError
 
 
 # ---------------------------------------------------------------------------
@@ -353,6 +353,37 @@ def _cmd_elimina_fratello(repo: JsonRepository) -> None:
         print("Operazione annullata.")
 
 
+def _cmd_storico(repo: JsonRepository) -> None:
+    storico = repo.get_storico_turni()
+    if not storico:
+        print("\n(Nessun mese nello storico.)")
+        return
+
+    print("\nStorico turni confermati:")
+    for rec in storico:
+        mese = rec.get("mese", "?")
+        n = len(rec.get("assegnazioni", []))
+        confirmed = rec.get("confirmed_at", "")
+        print(f" - {mese}  ({n} assegnazioni, confermato {confirmed})")
+
+    az = input("\nVuoi (E)liminare un mese dallo storico o (I)ndietro? [E/I]: ").strip().upper()
+    if az != "E":
+        return
+
+    mese = input("Inserisci il mese da eliminare (YYYY-MM): ").strip()
+    conferma = input(
+        f"Confermi l'eliminazione del mese '{mese}' dallo storico? [s/N]: "
+    ).strip().lower()
+    if conferma != "s":
+        print("Operazione annullata.")
+        return
+    try:
+        repo.delete_storico_mese(mese)
+        print(f"Mese '{mese}' rimosso dallo storico.")
+    except TurniVisiteError as e:
+        print(f"Errore: {e}")
+
+
 def _cmd_elimina_famiglia(repo: JsonRepository) -> None:
     _stampa_elenco(repo)
     nome = input("\nNome della famiglia da eliminare: ").strip()
@@ -388,7 +419,8 @@ Menu:
 7.  Sanifica dati (normalizza + alias)
 8.  Elimina un fratello
 9.  Elimina una famiglia
-10. Esci"""
+10. Visualizza/elimina storico turni
+11. Esci"""
 
 _HANDLERS = {
     1: _cmd_aggiungi_fratello,
@@ -398,6 +430,7 @@ _HANDLERS = {
     5: _cmd_capacita,
     8: _cmd_elimina_fratello,
     9: _cmd_elimina_famiglia,
+    10: _cmd_storico,
 }
 
 
@@ -415,12 +448,12 @@ def main() -> None:
     while True:
         print(_MENU)
         try:
-            scelta = int(input("Scegli un'opzione (1-10): "))
+            scelta = int(input("Scegli un'opzione (1-11): "))
         except ValueError:
             print("Opzione non valida. Devi inserire un numero.")
             continue
 
-        if scelta == 10:
+        if scelta == 11:
             print("Uscita.")
             break
         elif scelta == 6:
