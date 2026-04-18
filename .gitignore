@@ -28,8 +28,12 @@ logs/
 *.tmp
 .turni_*.tmp
 
-# PDF generati
+# Backup
+backups/
+
+# PDF e CSV generati
 *.pdf
+*.csv
 
 # IDE
 .vscode/

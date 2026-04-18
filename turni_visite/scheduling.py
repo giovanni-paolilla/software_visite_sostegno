@@ -4,6 +4,8 @@ import math
 import os
 from collections import defaultdict
 
+from .config import SOLVER_TIMEOUT_SECONDS, SOLVER_MAX_WORKERS
+
 _ORTOOLS_IMPORT_ERROR: Exception | None = None
 try:
     from ortools.sat.python import cp_model  # type: ignore
@@ -14,8 +16,8 @@ except Exception as _e:
 
 _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 
-# Numero di worker del solver: usa tutti i core disponibili, max 8.
-_SOLVER_WORKERS = min(8, os.cpu_count() or 4)
+# Numero di worker del solver: usa tutti i core disponibili, max configurato.
+_SOLVER_WORKERS = min(SOLVER_MAX_WORKERS, os.cpu_count() or 4)
 
 
 def _require_ortools() -> None:
@@ -141,6 +143,70 @@ def verifica_fattibilita(
     return problemi
 
 
+def pre_check_fattibilita(
+    snap: dict,
+    mesi: list[str],
+    storico_turni: list[dict],
+    cooldown: int,
+) -> dict:
+    """
+    Pre-check rapido di fattibilita' senza invocare il solver.
+    Ritorna {fattibile: bool, problemi: [str], avvisi: [str]}
+    """
+    problemi: list[str] = []
+    avvisi: list[str] = []
+
+    base = verifica_fattibilita(
+        snap["fratelli"], snap["famiglie"],
+        snap["associazioni"], snap["frequenze"], snap["capacita"],
+    )
+    problemi.extend(base)
+
+    # Check indisponibilita'
+    indisponibilita = snap.get("indisponibilita", {})
+    for mese in mesi:
+        indisponibili = [fr for fr, mesi_ind in indisponibilita.items() if mese in mesi_ind]
+        if indisponibili:
+            # Ricalcola capacita' effettiva
+            cap_eff = dict(snap["capacita"])
+            for fr in indisponibili:
+                cap_eff[fr] = 0
+            fratelli_coinvolti = {b for lst in snap["associazioni"].values() for b in lst}
+            cap_totale = _somma_capacita(fratelli_coinvolti, cap_eff)
+            domanda = sum(snap["frequenze"].get(f, 2) for f in snap["famiglie"])
+            if cap_totale < domanda:
+                problemi.append(
+                    f"Mese {mese}: capacita' insufficiente dopo indisponibilita' "
+                    f"({', '.join(indisponibili)})"
+                )
+            else:
+                avvisi.append(
+                    f"Mese {mese}: {len(indisponibili)} fratello/i indisponibile/i "
+                    f"({', '.join(indisponibili)})"
+                )
+
+    # Check cooldown
+    M = len(mesi)
+    if M:
+        max_per_brother = (M + cooldown) // (cooldown + 1) if M else 0
+        for fam in snap["famiglie"]:
+            n = len(snap["associazioni"].get(fam, []))
+            freq = snap["frequenze"].get(fam, 2)
+            required = freq * M
+            max_possible = n * max_per_brother
+            if required > max_possible:
+                problemi.append(
+                    f"Famiglia '{fam}': richiede {required} visite in {M} mesi, "
+                    f"max teorico {max_possible} (cooldown={cooldown}, {n} fratelli)"
+                )
+
+    return {
+        "fattibile": len(problemi) == 0,
+        "problemi": problemi,
+        "avvisi": avvisi,
+    }
+
+
 def explain_infeasible(
     mesi: list[str],
     fratelli: set[str],
@@ -259,9 +325,14 @@ def ottimizza_turni_mesi(
     capacita: dict[str, int] | None = None,
     storico_turni: list[dict] | None = None,
     cooldown_mesi: int = 3,
+    indisponibilita: dict[str, list[str]] | None = None,
+    vincoli_personalizzati: list[dict] | None = None,
+    solver_timeout: float | None = None,
+    solver_workers: int | None = None,
 ) -> dict | None:
     """
-    Ottimizza i turni su piu' mesi con vincoli di capacita' e anti-ravvicinato.
+    Ottimizza i turni su piu' mesi con vincoli di capacita', anti-ravvicinato,
+    indisponibilita' e vincoli personalizzati.
 
     Ritorna il dizionario della soluzione, oppure None se infeasible.
     Solleva RuntimeError se ortools non e' disponibile.
@@ -271,6 +342,10 @@ def ottimizza_turni_mesi(
     capacita = capacita or {fr: 1 for fr in fratelli}
     storico_turni = storico_turni or []
     cooldown_mesi = max(1, int(cooldown_mesi))
+    indisponibilita = indisponibilita or {}
+    vincoli_personalizzati = vincoli_personalizzati or []
+    timeout = solver_timeout or SOLVER_TIMEOUT_SECONDS
+    workers = solver_workers or _SOLVER_WORKERS
 
     problemi = verifica_fattibilita(fratelli, famiglie, associazioni, frequenze, capacita)
     if problemi:
@@ -349,6 +424,38 @@ def ottimizza_turni_mesi(
                     if 1 <= dist <= cooldown_mesi:
                         model.Add(y[(first, fam, fr)] == 0)
 
+    # NUOVO: Vincolo indisponibilita' temporanee
+    for fr, mesi_ind in indisponibilita.items():
+        for mese in mesi:
+            if mese in mesi_ind:
+                # Fratello non puo' fare visite in questo mese
+                terms = [
+                    y[(mese, fam, fr)]
+                    for fam in famiglie
+                    if fr in associazioni.get(fam, [])
+                ]
+                for term in terms:
+                    model.Add(term == 0)
+
+    # NUOVO: Vincoli personalizzati
+    for vincolo in vincoli_personalizzati:
+        fa = vincolo.get("fratello_a", "")
+        fb = vincolo.get("fratello_b", "")
+        tipo = vincolo.get("tipo", "")
+
+        if tipo == "incompatibile":
+            # Fratelli incompatibili: non possono visitare la stessa famiglia nello stesso mese
+            for mese in mesi:
+                for fam in famiglie:
+                    assoc = associazioni.get(fam, [])
+                    if fa in assoc and fb in assoc:
+                        model.Add(y[(mese, fam, fa)] + y[(mese, fam, fb)] <= 1)
+
+        elif tipo == "preferenza_coppia":
+            # Soft: preferisci che visitino la stessa famiglia nello stesso mese
+            # (gestito come soft constraint nell'obiettivo)
+            pass  # gestito nell'obiettivo sotto
+
     # Obiettivo: minimizza il carico massimo mensile (distribuzione equa)
     load: dict = {}
     for mese in mesi:
@@ -365,11 +472,29 @@ def ottimizza_turni_mesi(
     max_load = model.NewIntVar(0, 999, "max_load")
     for v in load.values():
         model.Add(v <= max_load)
-    model.Minimize(max_load)
+
+    # Obiettivo composito: minimizza max_load + bonus per preferenze coppia
+    objective_terms = [max_load * 100]  # peso principale
+
+    for vincolo in (vincoli_personalizzati or []):
+        if vincolo.get("tipo") == "preferenza_coppia":
+            fa = vincolo.get("fratello_a", "")
+            fb = vincolo.get("fratello_b", "")
+            for mese in mesi:
+                for fam in famiglie:
+                    assoc = associazioni.get(fam, [])
+                    if fa in assoc and fb in assoc:
+                        # Bonus: -1 se entrambi assegnati alla stessa famiglia
+                        bonus = model.NewBoolVar(f"coppia_{mese}_{fam}_{fa}_{fb}")
+                        model.Add(y[(mese, fam, fa)] + y[(mese, fam, fb)] >= 2).OnlyEnforceIf(bonus)
+                        model.Add(y[(mese, fam, fa)] + y[(mese, fam, fb)] <= 1).OnlyEnforceIf(bonus.Not())
+                        objective_terms.append(-bonus)
+
+    model.Minimize(sum(objective_terms))
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 20.0
-    solver.parameters.num_search_workers = _SOLVER_WORKERS
+    solver.parameters.max_time_in_seconds = timeout
+    solver.parameters.num_search_workers = workers
 
     status = solver.Solve(model)
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):

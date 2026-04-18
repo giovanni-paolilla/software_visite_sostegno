@@ -81,3 +81,21 @@ class SolverResult:
     """
     feasible: bool
     solution: dict[str, Any] | None = None
+
+
+@dataclass
+class AuditEvent:
+    """Singolo evento di audit trail."""
+    timestamp: str
+    azione: str
+    dettagli: str
+    utente: str = "sistema"
+
+
+@dataclass
+class VincoloPersonalizzato:
+    """Vincolo personalizzato tra due fratelli."""
+    fratello_a: str
+    fratello_b: str
+    tipo: str  # "incompatibile" | "preferenza_coppia"
+    descrizione: str = ""
