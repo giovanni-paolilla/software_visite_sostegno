@@ -1,0 +1,7 @@
+# Richiede Python 3.10+ (usa type hints con '|')
+# Su Linux potrebbe essere necessario installare: python3-tk
+ortools>=9.9,<10
+reportlab>=4.0,<5
+
+# (facoltativi, per test)
+pytest>=8.0,<9

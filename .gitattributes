@@ -1,0 +1,10 @@
+# Normalizzazione line endings: tutti i file di testo usano LF nel repository.
+# Windows riceve CRLF in checkout (comportamento predefinito di Git su Windows).
+* text=auto
+*.py  text eol=lf
+*.md  text eol=lf
+*.txt text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.cfg  text eol=lf
+*.ini  text eol=lf

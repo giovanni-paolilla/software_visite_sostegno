@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "turni-visite"
+version = "0.1.0"
+description = "Programma per l'assegnazione dei turni di visite di sostegno (Messina Ganzirri) con OR-Tools e PDF A4."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Congregazione Messina-Ganzirri" }
+]
+license = { text = "MIT" }
+
+dependencies = [
+  "ortools>=9.9,<10",
+  "reportlab>=4.0,<5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9",
+]
+
+[project.scripts]
+# Avvio CLI: comando 'turni' da terminale
+turni     = "turni_visite.cli:main"
+# Avvio GUI: comando 'turni-gui' da terminale
+turni-gui = "turni_visite.gui_tk:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["turni_visite"]
