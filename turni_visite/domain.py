@@ -13,6 +13,9 @@ from typing import Any
 # Gerarchia di eccezioni
 # ---------------------------------------------------------------------------
 
+NON_ASSEGNATO = "(non assegnato)"
+
+
 class TurniVisiteError(Exception):
     """Errore base del dominio — cattura tutte le eccezioni applicative."""
 

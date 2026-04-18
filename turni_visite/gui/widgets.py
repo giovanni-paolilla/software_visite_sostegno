@@ -92,8 +92,11 @@ class FilterableComboBox(ctk.CTkComboBox):
         self._prefix_idx: int = 0
         self._after_id: str | None = None
         self._reset_ms = reset_ms
-        # Bind keyboard
-        entry = self._entry if hasattr(self, "_entry") else self
+        # Bind keyboard — CTkComboBox espone _entry internamente
+        try:
+            entry = self._entry
+        except AttributeError:
+            entry = self
         entry.bind("<KeyPress>", self._on_key, add="+")
         entry.bind("<FocusOut>", lambda _e: self._reset(), add="+")
 

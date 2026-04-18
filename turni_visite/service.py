@@ -20,14 +20,12 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .domain import SolverResult, StoricoConflittoError
+from .domain import SolverResult, StoricoConflittoError, NON_ASSEGNATO
 from .scheduling import ottimizza_turni_mesi, explain_infeasible, pre_check_fattibilita
 from .backup import create_backup
 
 if TYPE_CHECKING:
     from .repository import JsonRepository
-
-_NON_ASSEGNATO = "(non assegnato)"
 
 
 def esegui_ottimizzazione(
@@ -152,10 +150,10 @@ def modifica_assegnazione(
     fr_list[slot] = nuovo_fratello
 
     # Aggiorna anche by_brother
-    if vecchio and vecchio != _NON_ASSEGNATO:
+    if vecchio and vecchio != NON_ASSEGNATO:
         if famiglia in blocco["by_brother"].get(vecchio, []):
             blocco["by_brother"][vecchio].remove(famiglia)
-    if nuovo_fratello and nuovo_fratello != _NON_ASSEGNATO:
+    if nuovo_fratello and nuovo_fratello != NON_ASSEGNATO:
         blocco["by_brother"].setdefault(nuovo_fratello, [])
         if famiglia not in blocco["by_brother"][nuovo_fratello]:
             blocco["by_brother"][nuovo_fratello].append(famiglia)
@@ -191,6 +189,6 @@ def _estrai_assegnazioni(mese: str, solution: dict) -> list[dict]:
     blocco = solution["by_month"][mese]["by_family"]
     for fam, slots in blocco.items():
         for k, fr in enumerate(slots):
-            if fr and fr != _NON_ASSEGNATO:
+            if fr and fr != NON_ASSEGNATO:
                 assegnazioni.append({"famiglia": fam, "fratello": fr, "slot": k})
     return assegnazioni

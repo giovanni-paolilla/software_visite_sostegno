@@ -5,6 +5,7 @@ import os
 from collections import defaultdict
 
 from .config import SOLVER_TIMEOUT_SECONDS, SOLVER_MAX_WORKERS
+from .domain import NON_ASSEGNATO
 
 _ORTOOLS_IMPORT_ERROR: Exception | None = None
 try:
@@ -515,10 +516,10 @@ def ottimizza_turni_mesi(
                      if solver.Value(x[(mese, fam, fr, k)]) == 1),
                     None,
                 )
-                slots.append(chosen or "(non assegnato)")
+                slots.append(chosen or NON_ASSEGNATO)
             fam_map[fam] = slots
             for fr in slots:
-                if fr and fr != "(non assegnato)":
+                if fr and fr != NON_ASSEGNATO:
                     bro_map[fr].append(fam)
 
         by_month[mese] = {"by_family": fam_map, "by_brother": bro_map}

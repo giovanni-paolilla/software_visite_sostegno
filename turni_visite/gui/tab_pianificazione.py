@@ -175,10 +175,18 @@ class TabPianificazione(ctk.CTkFrame):
         if not mesi:
             return
         try:
-            cooldown = int(self.entry_cooldown.get() or 3)
+            cooldown = max(1, int(self.entry_cooldown.get() or 3))
             self.repo.set_setting("cooldown_mesi", cooldown)
             timeout = float(self.entry_timeout.get() or 20)
+            if not (1 <= timeout <= 300):
+                messagebox.showerror("Errore", "Timeout deve essere tra 1 e 300 secondi.")
+                return
             workers = int(self.entry_workers.get() or 8)
+            import os
+            max_w = min(16, os.cpu_count() or 4)
+            if not (1 <= workers <= max_w):
+                messagebox.showerror("Errore", f"Thread deve essere tra 1 e {max_w}.")
+                return
             self.repo.set_setting("solver_timeout", timeout)
             self.repo.set_setting("solver_workers", workers)
         except (ValueError, TurniVisiteError) as e:
@@ -195,11 +203,14 @@ class TabPianificazione(ctk.CTkFrame):
         self._status("Ottimizzazione in corso...")
         self._btn_ottimizza.configure(state="disabled")
 
+        # Snapshot storico PRIMA di lanciare il thread (thread safety)
+        storico_snapshot = self.repo.get_storico_turni()
+
         def _run() -> None:
             try:
                 result = esegui_ottimizzazione(
                     snap=snap, mesi=mesi,
-                    storico_turni=self.repo.get_storico_turni(),
+                    storico_turni=storico_snapshot,
                     cooldown=cooldown, solver_timeout=timeout, solver_workers=workers,
                 )
                 self.after(0, lambda: self._on_solve_done(result, mesi, snap, cooldown, week_windows))

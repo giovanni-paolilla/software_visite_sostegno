@@ -219,23 +219,29 @@ class TabAnagrafica(ctk.CTkFrame):
             messagebox.showerror("Errore", f"Errore lettura CSV: {e}")
             return
         n_fr = n_fam = 0
+        errori_import: list[str] = []
         for nome, cap in result["fratelli"]:
             try:
                 self.repo.add_brother(nome)
                 self.repo.set_brother_capacity(nome, cap)
                 n_fr += 1
-            except TurniVisiteError:
-                pass
+            except TurniVisiteError as e:
+                errori_import.append(f"Fratello '{nome}': {e}")
         for nome, freq in result["famiglie"]:
             try:
                 self.repo.add_family(nome)
                 self.repo.set_frequency(nome, freq)
                 n_fam += 1
-            except TurniVisiteError:
-                pass
+            except TurniVisiteError as e:
+                errori_import.append(f"Famiglia '{nome}': {e}")
         self.refresh_lists()
         self._notify()
-        messagebox.showinfo("Import", f"Importati: {n_fr} fratelli, {n_fam} famiglie.")
+        msg = f"Importati: {n_fr} fratelli, {n_fam} famiglie."
+        if errori_import:
+            msg += f"\n\nErrori ({len(errori_import)}):\n" + "\n".join(errori_import[:10])
+        if result["errori"]:
+            msg += f"\n\nErrori CSV ({len(result['errori'])}):\n" + "\n".join(result["errori"][:5])
+        messagebox.showinfo("Import completato", msg)
 
     def _on_select_cap_bro(self, choice: str) -> None:
         if not choice:
