@@ -140,9 +140,10 @@ class TurniVisiteApp(ctk.CTk):
         if not tab_p._last_result or not tab_p._last_result.solution:
             messagebox.showinfo("Stampa", "Nessuna soluzione da stampare.")
             return
-        tmp_dir = tempfile.mkdtemp()
-        tmp_pdf = f"{tmp_dir}/turni_stampa.pdf"
         try:
+            tmp_fd, tmp_pdf = tempfile.mkstemp(suffix=".pdf", prefix="turni_stampa_")
+            import os
+            os.close(tmp_fd)
             export_pdf_mesi(
                 tab_p._last_mesi, tab_p._last_result.solution,
                 tab_p._last_snap["frequenze"], tab_p._last_week_windows,
@@ -154,8 +155,7 @@ class TurniVisiteApp(ctk.CTk):
             elif system == "Darwin":
                 subprocess.Popen(["lp", tmp_pdf])
             elif system == "Windows":
-                import os
-                os.startfile(tmp_pdf, "print")
+                os.startfile(tmp_pdf, "print")  # type: ignore[attr-defined]
             self.set_status("Documento inviato alla stampante.")
         except Exception as e:
             messagebox.showerror("Errore stampa", str(e))

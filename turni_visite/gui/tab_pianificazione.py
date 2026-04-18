@@ -155,7 +155,11 @@ class TabPianificazione(ctk.CTkFrame):
         if not mesi:
             return
         snap = self.repo.data_snapshot()
-        cooldown = int(self.entry_cooldown.get() or 3)
+        try:
+            cooldown = int(self.entry_cooldown.get() or 3)
+        except ValueError:
+            messagebox.showerror("Errore", "Cooldown deve essere un numero intero.")
+            return
         result = quick_check(snap, mesi, self.repo.get_storico_turni(), cooldown)
 
         self.txt_output.delete("1.0", "end")

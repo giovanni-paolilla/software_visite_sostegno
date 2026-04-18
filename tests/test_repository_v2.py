@@ -130,7 +130,7 @@ class TestAuditTrail:
 
     def test_audit_limit(self, repo):
         for i in range(10):
-            repo.add_brother(f"Fratello {i}")
+            repo.add_brother(f"FratelloTest{chr(65 + i)}")
         log = repo.get_audit_log(5)
         assert len(log) == 5
 

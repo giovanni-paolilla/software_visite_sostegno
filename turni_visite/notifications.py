@@ -112,40 +112,41 @@ def send_notifications(
             "non_configurati": [],
         }
 
-    for fratello in sorted(fratelli_con_visite):
-        email = email_map.get(fratello)
-        if not email:
-            result["non_configurati"].append(fratello)
-            continue
-
-        try:
-            body = _build_message_for_brother(fratello, mesi, solution, frequenze)
-            msg = MIMEMultipart()
-            msg["From"] = smtp_cfg["from"] or smtp_cfg["user"]
-            msg["To"] = email
-            msg["Subject"] = f"Turni visite - {', '.join(mesi)}"
-            msg.attach(MIMEText(body, "plain", "utf-8"))
-
-            # Allega PDF se disponibile
-            if pdf_path and Path(pdf_path).exists():
-                with open(pdf_path, "rb") as f:
-                    pdf_attach = MIMEApplication(f.read(), _subtype="pdf")
-                    pdf_attach.add_header(
-                        "Content-Disposition", "attachment",
-                        filename=Path(pdf_path).name,
-                    )
-                    msg.attach(pdf_attach)
-
-            server.send_message(msg)
-            result["inviati"].append(fratello)
-            logging.info("Email inviata a %s (%s)", fratello, email)
-        except Exception as e:
-            result["errori"].append({"fratello": fratello, "errore": str(e)})
-            logging.error("Errore invio email a %s: %s", fratello, e)
-
     try:
-        server.quit()
-    except Exception:
-        pass
+        for fratello in sorted(fratelli_con_visite):
+            email = email_map.get(fratello)
+            if not email:
+                result["non_configurati"].append(fratello)
+                continue
+
+            try:
+                body = _build_message_for_brother(fratello, mesi, solution, frequenze)
+                msg = MIMEMultipart()
+                msg["From"] = smtp_cfg["from"] or smtp_cfg["user"]
+                msg["To"] = email
+                msg["Subject"] = f"Turni visite - {', '.join(mesi)}"
+                msg.attach(MIMEText(body, "plain", "utf-8"))
+
+                # Allega PDF se disponibile
+                if pdf_path and Path(pdf_path).exists():
+                    with open(pdf_path, "rb") as f:
+                        pdf_attach = MIMEApplication(f.read(), _subtype="pdf")
+                        pdf_attach.add_header(
+                            "Content-Disposition", "attachment",
+                            filename=Path(pdf_path).name,
+                        )
+                        msg.attach(pdf_attach)
+
+                server.send_message(msg)
+                result["inviati"].append(fratello)
+                logging.info("Email inviata a %s (%s)", fratello, email)
+            except Exception as e:
+                result["errori"].append({"fratello": fratello, "errore": str(e)})
+                logging.error("Errore invio email a %s: %s", fratello, e)
+    finally:
+        try:
+            server.quit()
+        except Exception:
+            pass
 
     return result

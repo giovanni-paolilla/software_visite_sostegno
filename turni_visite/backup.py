@@ -25,7 +25,7 @@ def create_backup(data_file: str | Path) -> str | None:
         return None
 
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     dest = BACKUP_DIR / f"dati_turni_{ts}.json"
     shutil.copy2(str(src), str(dest))
     logging.info("Backup creato: %s", dest)

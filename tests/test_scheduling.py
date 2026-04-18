@@ -145,7 +145,15 @@ class TestOttimizzaTurniMesi:
 
     def test_cooldown_rispettato(self):
         """Con cooldown=2 su 2 mesi consecutivi, nessun fratello puo' comparire in entrambi."""
-        fr, fam, assoc, freq, cap = self._params_base()
+        # Servono >=4 fratelli per famiglia (freq=2 * 2 mesi senza overlap)
+        fr = {"Mario", "Luigi", "Carla", "Anna", "Elena", "Bruno"}
+        fam = {"Fam A", "Fam B"}
+        assoc = {
+            "Fam A": ["Mario", "Luigi", "Carla", "Elena"],
+            "Fam B": ["Luigi", "Carla", "Anna", "Bruno"],
+        }
+        freq = {"Fam A": 2, "Fam B": 2}
+        cap = {f: 2 for f in fr}
         sol = ottimizza_turni_mesi(
             mesi=["2025-03", "2025-04"],
             fratelli=fr, famiglie=fam, associazioni=assoc,
@@ -175,7 +183,15 @@ class TestOttimizzaTurniMesi:
 
     def test_mesi_ordinati_automaticamente(self):
         """Passare mesi in ordine inverso deve produrre lo stesso risultato."""
-        fr, fam, assoc, freq, cap = self._params_base()
+        # Servono >=4 fratelli per famiglia (freq=2 * 2 mesi senza overlap con cooldown=1)
+        fr = {"Mario", "Luigi", "Carla", "Anna", "Elena", "Bruno"}
+        fam = {"Fam A", "Fam B"}
+        assoc = {
+            "Fam A": ["Mario", "Luigi", "Carla", "Elena"],
+            "Fam B": ["Luigi", "Carla", "Anna", "Bruno"],
+        }
+        freq = {"Fam A": 2, "Fam B": 2}
+        cap = {f: 2 for f in fr}
         sol = ottimizza_turni_mesi(
             mesi=["2025-04", "2025-03"],
             fratelli=fr, famiglie=fam, associazioni=assoc,

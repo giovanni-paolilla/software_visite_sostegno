@@ -53,13 +53,15 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/fratelli", methods=["POST"])
     def add_fratello():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         try:
             nome = repo.add_brother(data.get("nome", ""))
             if "capacita" in data:
                 repo.set_brother_capacity(nome, int(data["capacita"]))
             return jsonify({"nome": nome}), 201
-        except TurniVisiteError as e:
+        except (TurniVisiteError, ValueError, TypeError) as e:
             return jsonify({"errore": str(e)}), 400
 
     @app.route("/api/fratelli/<nome>", methods=["DELETE"])
@@ -84,13 +86,15 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/famiglie", methods=["POST"])
     def add_famiglia():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         try:
             nome = repo.add_family(data.get("nome", ""))
             if "frequenza" in data:
                 repo.set_frequency(nome, int(data["frequenza"]))
             return jsonify({"nome": nome}), 201
-        except TurniVisiteError as e:
+        except (TurniVisiteError, ValueError, TypeError) as e:
             return jsonify({"errore": str(e)}), 400
 
     @app.route("/api/famiglie/<nome>", methods=["DELETE"])
@@ -107,7 +111,9 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/associazioni", methods=["POST"])
     def associate():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         try:
             repo.associate(data.get("fratello", ""), data.get("famiglia", ""))
             return jsonify({"ok": True}), 201
@@ -116,7 +122,9 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/associazioni", methods=["DELETE"])
     def disassociate():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         try:
             repo.disassociate(data.get("fratello", ""), data.get("famiglia", ""))
             return jsonify({"ok": True})
@@ -129,9 +137,14 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/ottimizza", methods=["POST"])
     def ottimizza():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         mesi = data.get("mesi", [])
-        cooldown = int(data.get("cooldown", repo.get_setting("cooldown_mesi", 3)))
+        try:
+            cooldown = int(data.get("cooldown", repo.get_setting("cooldown_mesi", 3)))
+        except (ValueError, TypeError):
+            return jsonify({"errore": "Cooldown deve essere un numero intero."}), 400
         snap = repo.data_snapshot()
         try:
             result = esegui_ottimizzazione(
@@ -151,9 +164,14 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/pre-check", methods=["POST"])
     def pre_check():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         mesi = data.get("mesi", [])
-        cooldown = int(data.get("cooldown", repo.get_setting("cooldown_mesi", 3)))
+        try:
+            cooldown = int(data.get("cooldown", repo.get_setting("cooldown_mesi", 3)))
+        except (ValueError, TypeError):
+            return jsonify({"errore": "Cooldown deve essere un numero intero."}), 400
         snap = repo.data_snapshot()
         return jsonify(quick_check(snap, mesi, repo.get_storico_turni(), cooldown))
 
@@ -202,7 +220,9 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/indisponibilita", methods=["POST"])
     def add_indisp():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         try:
             repo.add_indisponibilita(data.get("fratello", ""), data.get("mese", ""))
             return jsonify({"ok": True}), 201
@@ -219,7 +239,9 @@ def create_app(data_file=None) -> "Flask":
 
     @app.route("/api/vincoli", methods=["POST"])
     def add_vincolo():
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"errore": "Body JSON non valido."}), 400
         try:
             repo.add_vincolo(
                 data.get("fratello_a", ""), data.get("fratello_b", ""),
@@ -238,7 +260,7 @@ def main() -> None:
     app = create_app()
     logging.info("API REST avviata su http://127.0.0.1:5000")
     print("API REST disponibile su http://127.0.0.1:5000")
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
 
 
 if __name__ == "__main__":

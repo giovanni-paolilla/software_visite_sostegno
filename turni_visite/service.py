@@ -15,6 +15,7 @@ all'utente.
 from __future__ import annotations
 
 import logging
+import os
 import platform
 import subprocess
 from pathlib import Path
@@ -172,8 +173,7 @@ def open_file(filepath: str | Path) -> bool:
         if system == "Darwin":
             subprocess.Popen(["open", filepath])
         elif system == "Windows":
-            # os.startfile non e' disponibile su tutti i sistemi
-            subprocess.Popen(["start", "", filepath], shell=True)
+            os.startfile(filepath)  # type: ignore[attr-defined]
         else:
             subprocess.Popen(["xdg-open", filepath])
         logging.info("Aperto file: %s", filepath)

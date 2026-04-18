@@ -30,13 +30,13 @@ class CTkListbox(ctk.CTkScrollableFrame):
         self._rebuild()
 
     def delete(self, first: int | str, last: int | str | None = None) -> None:
-        if first == 0 and last == tk.END:
-            self._items.clear()
-            self._selected = None
-            self._rebuild()
-            return
-        start = int(first)
-        end = int(last) + 1 if last is not None else start + 1
+        start = int(first) if first != tk.END and first != "end" else len(self._items)
+        if last is None:
+            end = start + 1
+        elif last == tk.END or last == "end":
+            end = len(self._items)
+        else:
+            end = int(last) + 1
         del self._items[start:end]
         self._selected = None
         self._rebuild()
