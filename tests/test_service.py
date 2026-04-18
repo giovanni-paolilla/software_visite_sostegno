@@ -1,7 +1,7 @@
 """Test per turni_visite.service."""
 import pytest
 from turni_visite.domain import StoricoConflittoError
-from turni_visite.service import conferma_e_salva_turni, _estrai_assegnazioni
+from turni_visite.service import conferma_e_salva_turni
 
 try:
     from ortools.sat.python import cp_model as _cp
@@ -11,40 +11,7 @@ except Exception:
 
 
 # ---------------------------------------------------------------------------
-# _estrai_assegnazioni (funzione pura, nessun I/O)
-# ---------------------------------------------------------------------------
-
-class TestEstraiAssegnazioni:
-    def _sol(self, slots):
-        return {
-            "by_month": {
-                "2025-03": {
-                    "by_family": {"Fam A": slots},
-                    "by_brother": {},
-                }
-            }
-        }
-
-    def test_estrae_correttamente(self):
-        result = _estrai_assegnazioni("2025-03", self._sol(["Mario", "Luigi"]))
-        assert len(result) == 2
-        nomi = {a["fratello"] for a in result}
-        assert nomi == {"Mario", "Luigi"}
-
-    def test_salta_non_assegnato(self):
-        result = _estrai_assegnazioni("2025-03", self._sol(["Mario", "(non assegnato)"]))
-        assert len(result) == 1
-        assert result[0]["fratello"] == "Mario"
-
-    def test_slot_index_corretto(self):
-        result = _estrai_assegnazioni("2025-03", self._sol(["Mario", "Luigi"]))
-        slots = {a["fratello"]: a["slot"] for a in result}
-        assert slots["Mario"] == 0
-        assert slots["Luigi"] == 1
-
-
-# ---------------------------------------------------------------------------
-# conferma_e_salva_turni (richiede repo reale su file temporaneo)
+# Fixture e helper
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
@@ -67,6 +34,10 @@ def _sol_semplice(mese, fr="Mario Rossi", fam="Famiglia Verdi"):
         }
     }
 
+
+# ---------------------------------------------------------------------------
+# conferma_e_salva_turni (API pubblica)
+# ---------------------------------------------------------------------------
 
 class TestConfermaESalvaTurni:
     def test_salva_correttamente(self, repo_con_dati):
@@ -97,3 +68,39 @@ class TestConfermaESalvaTurni:
         sol2 = _sol_semplice("2025-03")
         with pytest.raises(StoricoConflittoError):
             conferma_e_salva_turni(repo_con_dati, ["2025-03"], sol2)
+
+    def test_slot_index_salvato_correttamente(self, repo_con_dati):
+        """Verifica che gli slot index vengano estratti e salvati in ordine."""
+        sol = {
+            "by_month": {
+                "2025-05": {
+                    "by_family": {"Famiglia Verdi": ["Mario Rossi"]},
+                    "by_brother": {"Mario Rossi": ["Famiglia Verdi"]},
+                }
+            }
+        }
+        conferma_e_salva_turni(repo_con_dati, ["2025-05"], sol)
+        storico = repo_con_dati.get_storico_turni()
+        rec = next(r for r in storico if r["mese"] == "2025-05")
+        assert len(rec["assegnazioni"]) == 1
+        a = rec["assegnazioni"][0]
+        assert a["fratello"] == "Mario Rossi"
+        assert a["famiglia"] == "Famiglia Verdi"
+        assert a["slot"] == 0
+
+    def test_non_assegnato_non_salvato(self, repo_con_dati):
+        """Le voci '(non assegnato)' non devono entrare nello storico."""
+        sol = {
+            "by_month": {
+                "2025-06": {
+                    "by_family": {"Famiglia Verdi": ["Mario Rossi", "(non assegnato)"]},
+                    "by_brother": {"Mario Rossi": ["Famiglia Verdi"]},
+                }
+            }
+        }
+        conferma_e_salva_turni(repo_con_dati, ["2025-06"], sol)
+        storico = repo_con_dati.get_storico_turni()
+        rec = next(r for r in storico if r["mese"] == "2025-06")
+        fratelli_salvati = [a["fratello"] for a in rec["assegnazioni"]]
+        assert "(non assegnato)" not in fratelli_salvati
+        assert "Mario Rossi" in fratelli_salvati

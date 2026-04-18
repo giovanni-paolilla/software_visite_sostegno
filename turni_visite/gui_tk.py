@@ -87,112 +87,124 @@ def ask_week_windows_for_months(
 
 
 # ---------------------------------------------------------------------------
-# Type-ahead per Combobox
+# TypeaheadCombobox — Combobox con ricerca per prefisso e ciclo
 # ---------------------------------------------------------------------------
 
-def bind_typeahead(
-    cb: ttk.Combobox,
-    open_dropdown_on_match: bool = True,
-    reset_ms: int = 800,
-) -> None:
+class TypeaheadCombobox(ttk.Combobox):
     """
-    Aggiunge type-ahead (prefisso multiplo + ciclo) a una Combobox.
-    - Buffer di prefisso con reset automatico dopo reset_ms.
-    - Ripetendo la stessa lettera scorre ciclicamente i match.
+    Combobox con type-ahead: digita un prefisso per filtrare i valori,
+    ripeti la stessa lettera per scorrere i match, Backspace cancella,
+    Esc azzera il buffer.
     """
-    cb._ta_prefix = ""
-    cb._ta_idx = 0
-    cb._ta_after_id = None
-    cb._ta_last_values_hash = None
 
-    def _values_list() -> list[str]:
+    def __init__(self, master=None, open_dropdown_on_match: bool = True,
+                 reset_ms: int = 800, **kwargs) -> None:
+        super().__init__(master, **kwargs)
+        self._ta_prefix: str = ""
+        self._ta_idx: int = 0
+        self._ta_after_id: str | None = None
+        self._ta_last_values_hash: int | None = None
+        self._ta_open_dropdown = open_dropdown_on_match
+        self._ta_reset_ms = reset_ms
+        self.bind("<KeyPress>", self._on_key, add="+")
+        self.bind("<FocusOut>", lambda _e: self._reset_buffer(), add="+")
+
+    # ------------------------------------------------------------------
+    # Gestione buffer
+
+    def _reset_buffer(self) -> None:
+        self._ta_prefix = ""
+        self._ta_idx = 0
+        self._ta_after_id = None
+
+    def _start_reset_timer(self) -> None:
+        if self._ta_after_id is not None:
+            try:
+                self.after_cancel(self._ta_after_id)
+            except Exception:
+                pass
+        self._ta_after_id = self.after(self._ta_reset_ms, self._reset_buffer)
+
+    # ------------------------------------------------------------------
+    # Ricerca valori
+
+    def _values_list(self) -> list[str]:
         try:
-            return [str(v) for v in list(cb.cget("values"))]
+            return [str(v) for v in list(self.cget("values"))]
         except Exception:
             return []
 
-    def _matches(prefix: str) -> list[str]:
+    def _matches(self, prefix: str) -> list[str]:
         pref = prefix.lower()
-        return [v for v in _values_list() if v.lower().startswith(pref)]
+        return [v for v in self._values_list() if v.lower().startswith(pref)]
 
-    def _reset_buffer() -> None:
-        cb._ta_prefix = ""
-        cb._ta_idx = 0
-        cb._ta_after_id = None
-
-    def _start_reset_timer() -> None:
-        if cb._ta_after_id is not None:
-            try:
-                cb.after_cancel(cb._ta_after_id)
-            except Exception:
-                pass
-        cb._ta_after_id = cb.after(reset_ms, _reset_buffer)
-
-    def _open_dropdown() -> None:
-        if not open_dropdown_on_match:
+    def _open_dropdown(self) -> None:
+        if not self._ta_open_dropdown:
             return
         try:
-            cb.tk.call(cb._w, "post")
+            self.tk.call(self._w, "post")
             return
         except Exception:
             pass
-        cb.event_generate("<Down>")
+        self.event_generate("<Down>")
 
-    def _select_current(prefix: str, idx: int) -> bool:
-        matches = _matches(prefix)
+    def _select_current(self, prefix: str, idx: int) -> bool:
+        matches = self._matches(prefix)
         if not matches:
             return False
-        cb._ta_idx = idx % len(matches)
-        cb._ta_prefix = prefix
-        cb.set(matches[cb._ta_idx])
-        _open_dropdown()
+        self._ta_idx = idx % len(matches)
+        self._ta_prefix = prefix
+        self.set(matches[self._ta_idx])
+        self._open_dropdown()
         return True
 
-    def _on_key(event) -> str | None:
-        fg = cb.focus_get()
-        if not fg or not str(fg).startswith(str(cb)):
+    # ------------------------------------------------------------------
+    # Handler tastiera
+
+    def _on_key(self, event) -> str | None:
+        fg = self.focus_get()
+        if not fg or not str(fg).startswith(str(self)):
             return None
 
-        new_hash = hash(tuple(_values_list()))
-        if new_hash != cb._ta_last_values_hash:
-            cb._ta_last_values_hash = new_hash
-            _reset_buffer()
+        new_hash = hash(tuple(self._values_list()))
+        if new_hash != self._ta_last_values_hash:
+            self._ta_last_values_hash = new_hash
+            self._reset_buffer()
 
         if event.keysym == "BackSpace":
-            if cb._ta_prefix:
-                cb._ta_prefix = cb._ta_prefix[:-1]
-                cb._ta_idx = 0
-                if cb._ta_prefix:
-                    _select_current(cb._ta_prefix, 0)
-                _start_reset_timer()
+            if self._ta_prefix:
+                self._ta_prefix = self._ta_prefix[:-1]
+                self._ta_idx = 0
+                if self._ta_prefix:
+                    self._select_current(self._ta_prefix, 0)
+                self._start_reset_timer()
             return "break"
+
         if event.keysym in ("Escape", "Cancel"):
-            _reset_buffer()
+            self._reset_buffer()
             return "break"
 
         ch = event.char
         if ch and len(ch) == 1 and (ch.isalnum() or ch in " .'-"):
-            if len(cb._ta_prefix) == 1 and cb._ta_prefix.lower() == ch.lower():
-                matches = _matches(cb._ta_prefix)
+            if len(self._ta_prefix) == 1 and self._ta_prefix.lower() == ch.lower():
+                matches = self._matches(self._ta_prefix)
                 if matches:
-                    cb._ta_idx = (cb._ta_idx + 1) % len(matches)
-                    cb.set(matches[cb._ta_idx])
-                    _open_dropdown()
-                    _start_reset_timer()
+                    self._ta_idx = (self._ta_idx + 1) % len(matches)
+                    self.set(matches[self._ta_idx])
+                    self._open_dropdown()
+                    self._start_reset_timer()
                     return "break"
-            new_prefix = cb._ta_prefix + ch
-            if _select_current(new_prefix, 0):
-                _start_reset_timer()
+            new_prefix = self._ta_prefix + ch
+            if self._select_current(new_prefix, 0):
+                self._start_reset_timer()
                 return "break"
-            if _select_current(ch, 0):
-                _start_reset_timer()
+            if self._select_current(ch, 0):
+                self._start_reset_timer()
                 return "break"
-            _start_reset_timer()
+            self._start_reset_timer()
             return "break"
-        return None
 
-    cb.bind("<KeyPress>", _on_key, add="+")
-    cb.bind("<FocusOut>", lambda _e: _reset_buffer(), add="+")
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +219,6 @@ class TurniVisiteApp(tk.Tk):
 
         self.repo = JsonRepository(DATA_FILE)
 
-        # Riferimento diretto al pulsante Ottimizza (fix #9)
         self._btn_ottimizza: ttk.Button | None = None
 
         self.notebook = ttk.Notebook(self)
@@ -250,49 +261,44 @@ class TurniVisiteApp(tk.Tk):
         assoc_frame = ttk.Frame(self.tab_anagrafica)
         assoc_frame.pack(fill="x", **pad)
         ttk.Label(assoc_frame, text="Associa:").pack(side="left")
-        self.combo_assoc_bro = ttk.Combobox(
+        self.combo_assoc_bro = TypeaheadCombobox(
             assoc_frame, values=sorted(self.repo.fratelli), width=28, state="readonly"
         )
         self.combo_assoc_bro.pack(side="left", padx=4)
-        bind_typeahead(self.combo_assoc_bro)
         ttk.Label(assoc_frame, text="→").pack(side="left", padx=4)
-        self.combo_assoc_fam = ttk.Combobox(
+        self.combo_assoc_fam = TypeaheadCombobox(
             assoc_frame, values=sorted(self.repo.famiglie), width=28, state="readonly"
         )
         self.combo_assoc_fam.pack(side="left", padx=4)
-        bind_typeahead(self.combo_assoc_fam)
         ttk.Button(assoc_frame, text="Associa", command=self.associate).pack(side="left", padx=6)
 
         freq_frame = ttk.Frame(self.tab_anagrafica)
         freq_frame.pack(fill="x", **pad)
         ttk.Label(freq_frame, text="Frequenza (1/2/4):").pack(side="left")
-        self.combo_freq = ttk.Combobox(freq_frame, values=[1, 2, 4], width=5, state="readonly")
+        self.combo_freq = TypeaheadCombobox(freq_frame, values=[1, 2, 4], width=5, state="readonly")
         self.combo_freq.pack(side="left", padx=4)
-        bind_typeahead(self.combo_freq)
         ttk.Label(freq_frame, text="per famiglia:").pack(side="left")
-        self.combo_freq_fam = ttk.Combobox(
+        self.combo_freq_fam = TypeaheadCombobox(
             freq_frame, values=sorted(self.repo.famiglie), width=28, state="readonly"
         )
         self.combo_freq_fam.pack(side="left", padx=4)
-        bind_typeahead(self.combo_freq_fam)
         ttk.Button(freq_frame, text="Imposta Frequenza", command=self.set_frequency).pack(
             side="left", padx=6
         )
 
         ttk.Separator(self.tab_anagrafica, orient="horizontal").pack(fill="x", **pad)
 
-        cap_frame = ttk.LabelFrame(self.tab_anagrafica, text="Capacita' visite mensili (massimo)")
+        cap_frame = ttk.LabelFrame(self.tab_anagrafica, text="Capacità visite mensili (massimo)")
         cap_frame.pack(fill="x", **pad)
         ttk.Label(cap_frame, text="Fratello:").pack(side="left")
-        self.combo_cap_bro = ttk.Combobox(
+        self.combo_cap_bro = TypeaheadCombobox(
             cap_frame, values=sorted(self.repo.fratelli), width=28, state="readonly"
         )
         self.combo_cap_bro.pack(side="left", padx=4)
-        bind_typeahead(self.combo_cap_bro)
-        ttk.Label(cap_frame, text="Capacita' (0..50):").pack(side="left", padx=(8, 4))
+        ttk.Label(cap_frame, text="Capacità (0..50):").pack(side="left", padx=(8, 4))
         self.spin_cap = tk.Spinbox(cap_frame, from_=0, to=50, width=5)
         self.spin_cap.pack(side="left", padx=4)
-        ttk.Button(cap_frame, text="Imposta Capacita'", command=self.set_capacity).pack(
+        ttk.Button(cap_frame, text="Imposta Capacità", command=self.set_capacity).pack(
             side="left", padx=8
         )
         self.combo_cap_bro.bind("<<ComboboxSelected>>", self.on_select_cap_bro)
@@ -302,20 +308,18 @@ class TurniVisiteApp(tk.Tk):
         del_frame = ttk.Frame(self.tab_anagrafica)
         del_frame.pack(fill="x", **pad)
         ttk.Label(del_frame, text="Elimina Fratello:").pack(side="left")
-        self.combo_del_bro = ttk.Combobox(
+        self.combo_del_bro = TypeaheadCombobox(
             del_frame, values=sorted(self.repo.fratelli), width=28, state="readonly"
         )
         self.combo_del_bro.pack(side="left", padx=4)
-        bind_typeahead(self.combo_del_bro)
         ttk.Button(del_frame, text="Elimina", command=self.delete_brother).pack(
             side="left", padx=(4, 12)
         )
         ttk.Label(del_frame, text="Elimina Famiglia:").pack(side="left")
-        self.combo_del_fam = ttk.Combobox(
+        self.combo_del_fam = TypeaheadCombobox(
             del_frame, values=sorted(self.repo.famiglie), width=28, state="readonly"
         )
         self.combo_del_fam.pack(side="left", padx=4)
-        bind_typeahead(self.combo_del_fam)
         ttk.Button(del_frame, text="Elimina", command=self.delete_family).pack(side="left")
 
         ttk.Separator(self.tab_anagrafica, orient="horizontal").pack(fill="x", **pad)
@@ -350,7 +354,6 @@ class TurniVisiteApp(tk.Tk):
         self.var_cooldown = tk.IntVar(value=int(self.repo.get_setting("cooldown_mesi", 3)))
         ttk.Spinbox(top, from_=1, to=6, textvariable=self.var_cooldown, width=3).pack(side="left")
 
-        # Riferimento diretto → nessun tree-walk fragile in _btn_ottimizza_set_enabled
         self._btn_ottimizza = ttk.Button(
             top, text="Ottimizza & Genera PDF", command=self.optimize_and_export
         )
@@ -421,9 +424,9 @@ class TurniVisiteApp(tk.Tk):
             cap = int(self.spin_cap.get())
             self.repo.set_brother_capacity(bro, cap)
             self.refresh_lists()
-            self.set_status(f"Capacita' {cap}/mese impostata per '{bro}'.")
+            self.set_status(f"Capacità {cap}/mese impostata per '{bro}'.")
         except ValueError:
-            messagebox.showerror("Errore", "Capacita' non numerica.", parent=self)
+            messagebox.showerror("Errore", "Capacità non numerica.", parent=self)
         except TurniVisiteError as e:
             messagebox.showerror("Errore", str(e), parent=self)
 
@@ -434,7 +437,7 @@ class TurniVisiteApp(tk.Tk):
             return
         if messagebox.askyesno(
             "Conferma",
-            f"Eliminare il fratello '{bro}'?\nSara' rimosso anche da tutte le associazioni.",
+            f"Eliminare il fratello '{bro}'?\nSarà rimosso anche da tutte le associazioni.",
             parent=self,
         ):
             try:
@@ -503,14 +506,13 @@ class TurniVisiteApp(tk.Tk):
                 self.after(0, lambda: self._on_solve_done(result, mesi, snap, cooldown, week_windows))
             except RuntimeError as e:
                 err = str(e)
-                self.after(
-                    0,
-                    lambda: (
-                        messagebox.showerror("Errore", err, parent=self),
-                        self._btn_ottimizza_set_enabled(True),
-                        self.set_status("Errore durante l'ottimizzazione."),
-                    ),
-                )
+
+                def _on_run_error() -> None:
+                    messagebox.showerror("Errore", err, parent=self)
+                    self._btn_ottimizza_set_enabled(True)
+                    self.set_status("Errore durante l'ottimizzazione.")
+
+                self.after(0, _on_run_error)
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -562,7 +564,7 @@ class TurniVisiteApp(tk.Tk):
             self.set_status("Operazione annullata. Nessun PDF generato, storico invariato.")
             return
 
-        # Chiede dove salvare il PDF (filedialog)
+        # Chiede dove salvare il PDF
         nome_file = "turni_" + "-".join(mesi) + ".pdf"
         pdf_path = filedialog.asksaveasfilename(
             parent=self,
@@ -585,11 +587,9 @@ class TurniVisiteApp(tk.Tk):
         # Salva nello storico
         try:
             salvati = conferma_e_salva_turni(self.repo, mesi, result.solution)
-            self.set_status(
-                f"PDF creato. Turni salvati: {', '.join(salvati)}."
-            )
+            self.set_status(f"PDF creato. Turni salvati: {', '.join(salvati)}.")
         except StoricoConflittoError as e:
-            messagebox.showwarning("Storico gia' presente", str(e), parent=self)
+            messagebox.showwarning("Storico già presente", str(e), parent=self)
             self.set_status("PDF creato, ma salvataggio storico NON eseguito (mesi duplicati).")
 
     def _confirm_plan_scrollable(self, content: str) -> bool:
@@ -612,11 +612,8 @@ class TurniVisiteApp(tk.Tk):
             result[0] = True
             top.destroy()
 
-        def _cancel() -> None:
-            top.destroy()
-
         ttk.Button(btn_frame, text="Conferma e salva", command=_ok).pack(side="right", padx=4)
-        ttk.Button(btn_frame, text="Annulla", command=_cancel).pack(side="right")
+        ttk.Button(btn_frame, text="Annulla", command=top.destroy).pack(side="right")
 
         top.wait_window()
         return result[0]

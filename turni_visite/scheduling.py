@@ -39,7 +39,7 @@ def validate_month_yyyy_mm(mese: str) -> str:
     return mese
 
 
-def _month_to_idx(mese: str) -> int:
+def month_to_idx(mese: str) -> int:
     """Converte 'YYYY-MM' in indice intero (anno*12 + mese)."""
     mese = validate_month_yyyy_mm(mese)
     y, m = mese.split("-")
@@ -73,7 +73,7 @@ def _build_history_for_family(
             if isinstance(fam, str) and isinstance(fr, str):
                 per_fam[fam].append((mese, slot, fr))
     for fam, lst in per_fam.items():
-        lst.sort(key=lambda t: (_month_to_idx(t[0]), t[1]))
+        lst.sort(key=lambda t: (month_to_idx(t[0]), t[1]))
     return per_fam
 
 
@@ -166,7 +166,7 @@ def explain_infeasible(
 
     mesi = [validate_month_yyyy_mm(m) for m in mesi]
     mesi_sorted = sorted(mesi)
-    idxs = [_month_to_idx(m) for m in mesi_sorted]
+    idxs = [month_to_idx(m) for m in mesi_sorted]
     if idxs and any(idxs[i + 1] <= idxs[i] for i in range(len(idxs) - 1)):
         lines.append("- Elenco mesi non ordinabile correttamente (duplicati o formato errato).")
 
@@ -201,7 +201,7 @@ def explain_infeasible(
                 )
 
     if mesi_sorted:
-        first_idx = _month_to_idx(mesi_sorted[0])
+        first_idx = month_to_idx(mesi_sorted[0])
         hist_by_fam = _build_history_for_family(storico_turni)
         for fam in sorted(famiglie):
             seq = hist_by_fam.get(fam, [])
@@ -209,7 +209,7 @@ def explain_infeasible(
                 continue
             last_by_fr: dict[str, tuple[str, int]] = {}
             for mh, _slot, fr in seq:
-                last_by_fr[fr] = (mh, _month_to_idx(mh))
+                last_by_fr[fr] = (mh, month_to_idx(mh))
             for fr, (mh_last, last_idx) in last_by_fr.items():
                 dist = first_idx - last_idx
                 if 1 <= dist <= cooldown_mesi:
@@ -321,7 +321,7 @@ def ottimizza_turni_mesi(
                 model.Add(sum(terms) <= cap)
 
     # Vincolo hard anti-ravvicinato (cooldown)
-    idx_map = {mese: _month_to_idx(mese) for mese in mesi}
+    idx_map = {mese: month_to_idx(mese) for mese in mesi}
     idx_to_month = {v: k for k, v in idx_map.items()}
 
     for fam in famiglie:
@@ -343,7 +343,7 @@ def ottimizza_turni_mesi(
                 continue
             last_by_fr: dict[str, int] = {}
             for mh, _slot, frh in seq:
-                last_by_fr[frh] = _month_to_idx(mh)
+                last_by_fr[frh] = month_to_idx(mh)
             for fr in associazioni.get(fam, []):
                 if fr in last_by_fr:
                     dist = first_idx - last_by_fr[fr]
@@ -395,7 +395,7 @@ def ottimizza_turni_mesi(
             fam_map[fam] = slots
             for fr in slots:
                 if fr and fr != "(non assegnato)":
-                    bro_map.setdefault(fr, []).append(fam)
+                    bro_map[fr].append(fam)
 
         by_month[mese] = {"by_family": fam_map, "by_brother": bro_map}
 

@@ -277,15 +277,20 @@ def _cmd_ottimizza(repo: JsonRepository, week_windows: dict) -> None:
         return
 
     print_reports_mesi(mesi, result.solution, snap["frequenze"], week_windows)
+    pdf_ok = True
     try:
         export_pdf_mesi(mesi, result.solution, snap["frequenze"], week_windows)
         print("PDF creato.")
     except OSError as e:
         print(f"Errore nel salvataggio del PDF: {e}")
+        pdf_ok = False
 
-    conferma = input(
-        "\nConfermi questi turni e vuoi salvarli nello storico? [s/N]: "
-    ).strip().lower()
+    if pdf_ok:
+        domanda = "\nConfermi questi turni e vuoi salvarli nello storico? [s/N]: "
+    else:
+        domanda = "\nPDF non generato. Vuoi comunque salvare i turni nello storico? [s/N]: "
+
+    conferma = input(domanda).strip().lower()
     if conferma != "s":
         print("Bozza non salvata: nessuna modifica allo storico.")
         return
@@ -423,7 +428,6 @@ def main() -> None:
         elif scelta == 7:
             _cmd_sanifica(repo)
         elif scelta in _HANDLERS:
-            _handlers = _HANDLERS  # evita lookup ripetuto
             _HANDLERS[scelta](repo)
         else:
             print("Opzione non valida.")

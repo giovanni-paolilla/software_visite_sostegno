@@ -6,8 +6,8 @@ TITLE_TEXT = "PROGRAMMA VISITE DI SOSTEGNO - MESSINA GANZIRRI"
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 # Percorsi stabili (evita problemi se avvii da una cartella diversa)
-DATA_FILE = str(PROJECT_DIR / "dati_turni.json")
-PDF_FILENAME = str(PROJECT_DIR / "turni_visite.pdf")
+DATA_FILE = PROJECT_DIR / "dati_turni.json"
+PDF_FILENAME = PROJECT_DIR / "turni_visite.pdf"
 
 # PDF base margins (pt)
 PDF_MARGINS = {

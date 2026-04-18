@@ -31,3 +31,6 @@ turni-gui = "turni_visite.gui_tk:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["turni_visite"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -2,7 +2,7 @@
 import pytest
 from turni_visite.scheduling import (
     validate_month_yyyy_mm,
-    _month_to_idx,
+    month_to_idx,
     valida_soluzione,
     verifica_fattibilita,
     ottimizza_turni_mesi,
@@ -30,12 +30,12 @@ class TestValidateMonthYyyyMm:
 
 class TestMonthToIdx:
     def test_ordinamento_corretto(self):
-        assert _month_to_idx("2025-01") < _month_to_idx("2025-02")
-        assert _month_to_idx("2025-12") < _month_to_idx("2026-01")
+        assert month_to_idx("2025-01") < month_to_idx("2025-02")
+        assert month_to_idx("2025-12") < month_to_idx("2026-01")
 
     def test_distanza_un_mese(self):
-        assert _month_to_idx("2025-02") - _month_to_idx("2025-01") == 1
-        assert _month_to_idx("2026-01") - _month_to_idx("2025-12") == 1
+        assert month_to_idx("2025-02") - month_to_idx("2025-01") == 1
+        assert month_to_idx("2026-01") - month_to_idx("2025-12") == 1
 
 
 class TestValidaSoluzione:

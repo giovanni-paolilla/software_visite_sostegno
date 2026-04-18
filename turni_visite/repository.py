@@ -18,6 +18,7 @@ import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 from .domain import (
     TurniVisiteError,
@@ -30,8 +31,8 @@ from .normalization import canonicalizza_nome
 
 
 class JsonRepository:
-    def __init__(self, filename: str) -> None:
-        self.filename: str = filename
+    def __init__(self, filename: Union[str, Path]) -> None:
+        self.filename: Union[str, Path] = filename
         self.fratelli: set[str] = set()
         self.famiglie: set[str] = set()
         self.associazioni: dict[str, list[str]] = {}
@@ -254,6 +255,7 @@ class JsonRepository:
         Questo garantisce che il file principale non sia mai in stato parziale.
         """
         dati = {
+            "schema_version": 1,
             "fratelli": sorted(self.fratelli),
             "famiglie": sorted(self.famiglie),
             "associazioni": {
@@ -286,6 +288,11 @@ class JsonRepository:
         try:
             with open(self.filename, "r", encoding="utf-8") as f:
                 dati = json.load(f)
+            schema_version = dati.get("schema_version", 0)
+            if schema_version < 1:
+                logging.warning(
+                    "File dati senza schema_version: formato legacy, caricamento compatibile."
+                )
             self.fratelli = set(dati.get("fratelli", []))
             self.famiglie = set(dati.get("famiglie", []))
             self.associazioni = dati.get("associazioni", {})
@@ -295,9 +302,8 @@ class JsonRepository:
             self.storico_turni = raw_storico if isinstance(raw_storico, list) else []
             raw_settings = dati.get("settings", {})
             self.settings = raw_settings if isinstance(raw_settings, dict) else {}
-            self.settings.setdefault("cooldown_mesi", 3)
             try:
-                self.settings["cooldown_mesi"] = int(self.settings["cooldown_mesi"])
+                self.settings["cooldown_mesi"] = int(self.settings.get("cooldown_mesi", 3))
             except (TypeError, ValueError):
                 self.settings["cooldown_mesi"] = 3
             # default per retrocompatibilita'
@@ -354,9 +360,9 @@ class JsonRepository:
                     assoc_new[fam_c] = sorted(dest)
 
             freq_new = {
-                fam: v if v in (1, 2, 4) else 2
+                fam: (v if v in (1, 2, 4) else 2)
                 for fam in fam_new
-                if (v := self.frequenze.get(fam, 2)) is not None
+                for v in (self.frequenze.get(fam, 2),)
             }
 
             cap_new: dict[str, int] = {}

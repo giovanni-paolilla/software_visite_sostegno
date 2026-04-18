@@ -1,6 +1,51 @@
 """Test per turni_visite.weeks."""
 import pytest
-from turni_visite.weeks import month_sigla, slot_label, slot_label_with_month
+from turni_visite.weeks import month_sigla, parse_settimane_lista, slot_label, slot_label_with_month
+
+
+class TestParseSettimanaLista:
+    def test_valida_due_intervalli(self):
+        result, err = parse_settimane_lista("01-07, 15-21", 2)
+        assert result == ["01-07", "15-21"]
+        assert err == ""
+
+    def test_valida_un_intervallo(self):
+        result, err = parse_settimane_lista("08-14", 1)
+        assert result == ["08-14"]
+        assert err == ""
+
+    def test_valida_quattro_intervalli(self):
+        result, err = parse_settimane_lista("01-07, 08-14, 15-21, 22-28", 4)
+        assert result == ["01-07", "08-14", "15-21", "22-28"]
+        assert err == ""
+
+    def test_numero_intervalli_errato(self):
+        result, err = parse_settimane_lista("01-07", 2)
+        assert result is None
+        assert "errato" in err
+
+    def test_formato_non_valido(self):
+        result, err = parse_settimane_lista("1-7, 15-21", 2)
+        assert result is None
+        assert err != ""
+
+    def test_giorni_fuori_range(self):
+        result, err = parse_settimane_lista("99-01", 1)
+        assert result is None
+        assert "fuori range" in err or "invertit" in err
+
+    def test_giorni_invertiti(self):
+        result, err = parse_settimane_lista("21-01", 1)
+        assert result is None
+
+    def test_stringa_vuota(self):
+        result, err = parse_settimane_lista("", 1)
+        assert result is None
+
+    def test_normalizza_zeri(self):
+        result, err = parse_settimane_lista("01-07", 1)
+        assert result == ["01-07"]
+        assert err == ""
 
 
 class TestMonthSigla:

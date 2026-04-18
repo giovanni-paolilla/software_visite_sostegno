@@ -222,6 +222,17 @@ class TestStoricoTurni:
         with pytest.raises(EntitaNonTrovata):
             repo_popolato.delete_storico_mese("2099-01")
 
+    def test_delete_mese_non_intacca_altri(self, repo_popolato):
+        """Cancellare un mese non deve rimuovere gli altri dal storico."""
+        ass = self._assegnazioni()
+        repo_popolato.append_storico_turni("2025-03", ass)
+        repo_popolato.append_storico_turni("2025-04", ass)
+        repo_popolato.append_storico_turni("2025-05", ass)
+        repo_popolato.delete_storico_mese("2025-04")
+        assert not repo_popolato.storico_has_mese("2025-04")
+        assert repo_popolato.storico_has_mese("2025-03")
+        assert repo_popolato.storico_has_mese("2025-05")
+
     def test_mese_non_valido_errore(self, repo_popolato):
         with pytest.raises(ValidazioneError):
             repo_popolato.append_storico_turni("", self._assegnazioni())
