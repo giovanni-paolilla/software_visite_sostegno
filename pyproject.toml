@@ -16,6 +16,7 @@ license = { text = "MIT" }
 dependencies = [
   "ortools>=9.9,<10",
   "reportlab>=4.0,<5",
+  "customtkinter>=5.2,<6",
 ]
 
 [project.optional-dependencies]

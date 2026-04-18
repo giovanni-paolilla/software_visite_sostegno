@@ -1,20 +1,17 @@
 """
-Interfaccia grafica Tkinter per il programma Turni Visite.
+Interfaccia grafica CustomTkinter per il programma Turni Visite.
 
-Richiede: Python 3.10+, ortools, reportlab, Tkinter.
-Su Linux installare python3-tk se non incluso nella distribuzione.
-
-Architettura: ogni tab e' un modulo separato in turni_visite/gui/.
+Richiede: Python 3.10+, customtkinter, ortools, reportlab.
 """
 from __future__ import annotations
 
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
+from tkinter import messagebox
 
 from .config import DATA_FILE
 from .logging_cfg import setup_logging
 from .repository import JsonRepository
-from .gui.themes import apply_theme, get_theme
+from .gui.themes import set_appearance, set_color_theme
 from .gui.tab_dashboard import TabDashboard
 from .gui.tab_anagrafica import TabAnagrafica
 from .gui.tab_pianificazione import TabPianificazione
@@ -23,120 +20,126 @@ from .gui.tab_calendario import TabCalendario
 from .gui.tab_avanzate import TabAvanzate
 
 
-class TurniVisiteApp(tk.Tk):
+class TurniVisiteApp(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
+
+        # Configura tema
+        set_appearance("System")  # segue il tema del sistema operativo
+        set_color_theme("blue")
+
         self.title("Turni Visite v0.2.0")
-        self.geometry("1120x750")
+        self.geometry("1150x780")
+        self.minsize(900, 600)
 
         self.repo = JsonRepository(DATA_FILE)
-        self._dark_mode = False
-        self._theme = get_theme(dark=False)
 
-        # Applica tema
-        apply_theme(self, self._theme)
+        # Tabview principale
+        self.tabview = ctk.CTkTabview(self, corner_radius=10)
+        self.tabview.pack(fill="both", expand=True, padx=12, pady=(12, 4))
 
-        # Menu barra
-        self._build_menu()
+        # Crea le tab
+        self.tabview.add("Dashboard")
+        self.tabview.add("Anagrafica")
+        self.tabview.add("Pianificazione")
+        self.tabview.add("Storico")
+        self.tabview.add("Calendario")
+        self.tabview.add("Avanzate")
 
-        # Notebook principale
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill="both", expand=True, padx=8, pady=8)
-
-        # Tab
-        self.tab_dashboard = TabDashboard(self.notebook, self.repo, self._theme)
-        self.notebook.add(self.tab_dashboard, text="Dashboard")
+        # Popola le tab con i moduli
+        self.tab_dashboard = TabDashboard(self.tabview.tab("Dashboard"), self.repo)
+        self.tab_dashboard.pack(fill="both", expand=True)
 
         self.tab_anagrafica = TabAnagrafica(
-            self.notebook, self.repo, self._theme,
+            self.tabview.tab("Anagrafica"), self.repo,
             on_change=self._on_data_change,
         )
-        self.notebook.add(self.tab_anagrafica, text="Anagrafica")
+        self.tab_anagrafica.pack(fill="both", expand=True)
 
         self.tab_pianifica = TabPianificazione(
-            self.notebook, self.repo, self._theme,
+            self.tabview.tab("Pianificazione"), self.repo,
             set_status=self.set_status,
             on_storico_change=self._on_storico_change,
         )
-        self.notebook.add(self.tab_pianifica, text="Pianificazione")
+        self.tab_pianifica.pack(fill="both", expand=True)
 
         self.tab_storico = TabStorico(
-            self.notebook, self.repo, self._theme,
+            self.tabview.tab("Storico"), self.repo,
             set_status=self.set_status,
         )
-        self.notebook.add(self.tab_storico, text="Storico")
+        self.tab_storico.pack(fill="both", expand=True)
 
-        self.tab_calendario = TabCalendario(self.notebook, self.repo, self._theme)
-        self.notebook.add(self.tab_calendario, text="Calendario")
+        self.tab_calendario = TabCalendario(
+            self.tabview.tab("Calendario"), self.repo,
+        )
+        self.tab_calendario.pack(fill="both", expand=True)
 
         self.tab_avanzate = TabAvanzate(
-            self.notebook, self.repo, self._theme,
+            self.tabview.tab("Avanzate"), self.repo,
             set_status=self.set_status,
             on_change=self._on_data_change,
         )
-        self.notebook.add(self.tab_avanzate, text="Avanzate")
+        self.tab_avanzate.pack(fill="both", expand=True)
 
-        # Status bar
-        self.status_var = tk.StringVar(value="Pronto")
-        status_bar = ttk.Label(self, textvariable=self.status_var, anchor="w")
-        status_bar.pack(fill="x", side="bottom", padx=8, pady=(0, 6))
+        # Barra inferiore: status + tema
+        bottom = ctk.CTkFrame(self, fg_color="transparent", height=36)
+        bottom.pack(fill="x", padx=12, pady=(0, 8))
 
-        # Binding per refresh al cambio tab
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+        self.status_var = ctk.StringVar(value="Pronto")
+        ctk.CTkLabel(bottom, textvariable=self.status_var, anchor="w").pack(side="left")
+
+        # Switch tema
+        self._dark_mode = ctk.StringVar(value="System")
+        ctk.CTkLabel(bottom, text="Tema:").pack(side="right", padx=(8, 4))
+        theme_menu = ctk.CTkOptionMenu(
+            bottom, values=["Light", "Dark", "System"],
+            variable=self._dark_mode, width=100,
+            command=self._change_theme,
+        )
+        theme_menu.pack(side="right")
+
+        # Shortcut stampa
+        self.bind_all("<Control-p>", lambda e: self._print())
 
         # Refresh iniziale
         self.tab_anagrafica.refresh_lists()
 
-    # ------------------------------------------------------------------
-    # Menu
-    # ------------------------------------------------------------------
+        # Binding tab change
+        self.tabview.configure(command=self._on_tab_changed)
 
-    def _build_menu(self) -> None:
-        menubar = tk.Menu(self)
-        self.config(menu=menubar)
+    def _on_tab_changed(self) -> None:
+        current = self.tabview.get()
+        if current == "Dashboard":
+            self.tab_dashboard.refresh()
+        elif current == "Storico":
+            self.tab_storico.refresh()
+        elif current == "Calendario":
+            self.tab_calendario.refresh()
+        elif current == "Avanzate":
+            self.tab_avanzate.refresh_all()
 
-        # Menu Vista
-        view_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Vista", menu=view_menu)
-        view_menu.add_command(label="Tema chiaro", command=lambda: self._set_theme(False))
-        view_menu.add_command(label="Tema scuro", command=lambda: self._set_theme(True))
-        view_menu.add_separator()
-        view_menu.add_command(label="Stampa (Ctrl+P)", command=self._print_dialog)
+    def _on_data_change(self) -> None:
+        self.tab_anagrafica.refresh_lists()
+        self.tab_dashboard.refresh()
 
-        # Menu Aiuto
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Aiuto", menu=help_menu)
-        help_menu.add_command(label="Informazioni", command=self._show_about)
+    def _on_storico_change(self) -> None:
+        self.tab_storico.refresh()
+        self.tab_dashboard.refresh()
 
-        # Shortcut stampa
-        self.bind_all("<Control-p>", lambda e: self._print_dialog())
+    def _change_theme(self, mode: str) -> None:
+        set_appearance(mode)
+        self.set_status(f"Tema: {mode}")
 
-    def _set_theme(self, dark: bool) -> None:
-        self._dark_mode = dark
-        self._theme = get_theme(dark=dark)
-        apply_theme(self, self._theme)
-        self.set_status(f"Tema {'scuro' if dark else 'chiaro'} applicato.")
-
-    def _print_dialog(self) -> None:
-        """Stampa diretta: genera un PDF temporaneo e lo invia al sistema di stampa."""
+    def _print(self) -> None:
         import subprocess
         import platform
         import tempfile
-
         from .pdf_export import export_pdf_mesi
 
-        # Cerca se c'e' una soluzione recente nel tab pianificazione
         tab_p = self.tab_pianifica
         if not tab_p._last_result or not tab_p._last_result.solution:
-            from tkinter import messagebox
-            messagebox.showinfo(
-                "Stampa",
-                "Nessuna soluzione da stampare. Esegui prima l'ottimizzazione.",
-                parent=self,
-            )
+            messagebox.showinfo("Stampa", "Nessuna soluzione da stampare.")
             return
-
-        # Genera PDF temporaneo
         tmp_dir = tempfile.mkdtemp()
         tmp_pdf = f"{tmp_dir}/turni_stampa.pdf"
         try:
@@ -145,14 +148,7 @@ class TurniVisiteApp(tk.Tk):
                 tab_p._last_snap["frequenze"], tab_p._last_week_windows,
                 output_path=tmp_pdf,
             )
-        except Exception as e:
-            from tkinter import messagebox
-            messagebox.showerror("Errore stampa", str(e), parent=self)
-            return
-
-        # Invia alla stampante
-        system = platform.system()
-        try:
+            system = platform.system()
             if system == "Linux":
                 subprocess.Popen(["lp", tmp_pdf])
             elif system == "Darwin":
@@ -162,43 +158,7 @@ class TurniVisiteApp(tk.Tk):
                 os.startfile(tmp_pdf, "print")
             self.set_status("Documento inviato alla stampante.")
         except Exception as e:
-            from tkinter import messagebox
-            messagebox.showerror("Errore stampa", f"Impossibile stampare: {e}", parent=self)
-
-    def _show_about(self) -> None:
-        from tkinter import messagebox
-        messagebox.showinfo(
-            "Turni Visite",
-            "Turni Visite v0.2.0\n\n"
-            "Programma per l'assegnazione dei turni di visite di sostegno.\n"
-            "Congregazione Messina-Ganzirri\n\n"
-            "Tecnologie: Python, OR-Tools, ReportLab, Tkinter",
-            parent=self,
-        )
-
-    # ------------------------------------------------------------------
-    # Event handlers
-    # ------------------------------------------------------------------
-
-    def _on_tab_changed(self, _event=None) -> None:
-        idx = self.notebook.index(self.notebook.select())
-        if idx == 0:  # Dashboard
-            self.tab_dashboard.refresh()
-        elif idx == 3:  # Storico
-            self.tab_storico.refresh()
-        elif idx == 4:  # Calendario
-            self.tab_calendario.refresh()
-        elif idx == 5:  # Avanzate
-            self.tab_avanzate.refresh_all()
-
-    def _on_data_change(self) -> None:
-        """Callback globale quando i dati cambiano (anagrafica, backup restore, ecc)."""
-        self.tab_anagrafica.refresh_lists()
-        self.tab_dashboard.refresh()
-
-    def _on_storico_change(self) -> None:
-        self.tab_storico.refresh()
-        self.tab_dashboard.refresh()
+            messagebox.showerror("Errore stampa", str(e))
 
     def set_status(self, msg: str) -> None:
         self.status_var.set(msg)

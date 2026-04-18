@@ -1,91 +1,91 @@
 """Tab Dashboard: panoramica KPI e stato del sistema."""
 from __future__ import annotations
 
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
 from typing import TYPE_CHECKING
+
+from .themes import get_colors
 
 if TYPE_CHECKING:
     from ..repository import JsonRepository
 
 
-class TabDashboard(ttk.Frame):
-    def __init__(self, parent: ttk.Notebook, repo: "JsonRepository", theme: dict, **kw) -> None:
+class TabDashboard(ctk.CTkFrame):
+    def __init__(self, parent, repo: "JsonRepository", **kw) -> None:
         super().__init__(parent, **kw)
         self.repo = repo
-        self.theme = theme
         self._build()
         self.refresh()
 
     def _build(self) -> None:
-        pad = {"padx": 10, "pady": 6}
-
         # Titolo
-        ttk.Label(self, text="Dashboard", font=("Helvetica", 16, "bold")).pack(anchor="w", **pad)
-        ttk.Separator(self, orient="horizontal").pack(fill="x", padx=10)
+        ctk.CTkLabel(self, text="Dashboard", font=ctk.CTkFont(size=20, weight="bold")).pack(
+            anchor="w", padx=16, pady=(12, 4))
 
         # Griglia KPI
-        kpi_frame = ttk.Frame(self)
-        kpi_frame.pack(fill="x", **pad)
+        kpi_frame = ctk.CTkFrame(self, fg_color="transparent")
+        kpi_frame.pack(fill="x", padx=16, pady=8)
 
-        self.kpi_labels: dict[str, tuple[ttk.Label, ttk.Label]] = {}
+        self.kpi_cards: dict[str, tuple[ctk.CTkLabel, ctk.CTkLabel]] = {}
         kpi_defs = [
             ("n_fratelli_attivi", "Fratelli attivi"),
             ("n_famiglie", "Famiglie"),
             ("capacita_totale", "Capacita' totale"),
             ("domanda_totale", "Domanda mensile"),
             ("bilancio", "Bilancio (cap-dom)"),
-            ("n_mesi_storico", "Mesi nello storico"),
+            ("n_mesi_storico", "Mesi storico"),
         ]
         for col, (key, label) in enumerate(kpi_defs):
-            frame = ttk.Frame(kpi_frame, relief="solid", borderwidth=1, padding=10)
-            frame.grid(row=0, column=col, padx=6, pady=6, sticky="nsew")
+            card = ctk.CTkFrame(kpi_frame, corner_radius=10)
+            card.grid(row=0, column=col, padx=6, pady=6, sticky="nsew")
             kpi_frame.columnconfigure(col, weight=1)
 
-            val_lbl = ttk.Label(frame, text="0", style="KPI.TLabel")
-            val_lbl.pack()
-            title_lbl = ttk.Label(frame, text=label, style="KPITitle.TLabel")
-            title_lbl.pack()
-            self.kpi_labels[key] = (val_lbl, title_lbl)
+            val_lbl = ctk.CTkLabel(card, text="0", font=ctk.CTkFont(size=24, weight="bold"))
+            val_lbl.pack(pady=(12, 2))
+            title_lbl = ctk.CTkLabel(card, text=label, font=ctk.CTkFont(size=11),
+                                      text_color="gray50")
+            title_lbl.pack(pady=(0, 10))
+            self.kpi_cards[key] = (val_lbl, title_lbl)
 
         # Avvisi
-        avvisi_frame = ttk.LabelFrame(self, text="Avvisi e suggerimenti")
-        avvisi_frame.pack(fill="both", expand=True, **pad)
-        self.txt_avvisi = tk.Text(avvisi_frame, height=10, wrap="word", state="disabled",
-                                  bg=self.theme.get("text_bg", "#fff"),
-                                  fg=self.theme.get("text_fg", "#000"))
-        self.txt_avvisi.pack(fill="both", expand=True, padx=4, pady=4)
+        avvisi_label = ctk.CTkLabel(self, text="Avvisi e suggerimenti",
+                                     font=ctk.CTkFont(size=14, weight="bold"))
+        avvisi_label.pack(anchor="w", padx=16, pady=(12, 4))
 
-        # Ultimo mese storico
-        bottom = ttk.Frame(self)
-        bottom.pack(fill="x", **pad)
-        self.lbl_ultimo_mese = ttk.Label(bottom, text="")
+        self.txt_avvisi = ctk.CTkTextbox(self, height=180, corner_radius=8)
+        self.txt_avvisi.pack(fill="both", expand=True, padx=16, pady=(0, 8))
+        self.txt_avvisi.configure(state="disabled")
+
+        # Footer
+        bottom = ctk.CTkFrame(self, fg_color="transparent")
+        bottom.pack(fill="x", padx=16, pady=(0, 12))
+        self.lbl_ultimo_mese = ctk.CTkLabel(bottom, text="")
         self.lbl_ultimo_mese.pack(side="left")
-        ttk.Button(bottom, text="Aggiorna", command=self.refresh).pack(side="right")
+        ctk.CTkButton(bottom, text="Aggiorna", width=100, command=self.refresh).pack(side="right")
 
     def refresh(self) -> None:
         kpi = self.repo.get_dashboard_kpi()
+        colors = get_colors()
 
-        for key, (val_lbl, _) in self.kpi_labels.items():
+        for key, (val_lbl, _) in self.kpi_cards.items():
             val = kpi.get(key, 0)
             val_lbl.configure(text=str(val))
 
         # Colora il bilancio
         bilancio = kpi.get("bilancio", 0)
-        bil_lbl = self.kpi_labels["bilancio"][0]
+        bil_lbl = self.kpi_cards["bilancio"][0]
         if bilancio < 0:
-            bil_lbl.configure(foreground=self.theme.get("danger", "red"))
+            bil_lbl.configure(text_color=colors["danger"])
         elif bilancio == 0:
-            bil_lbl.configure(foreground=self.theme.get("warning", "orange"))
+            bil_lbl.configure(text_color=colors["warning"])
         else:
-            bil_lbl.configure(foreground=self.theme.get("success", "green"))
+            bil_lbl.configure(text_color=colors["success"])
 
         # Ultimo mese
         ultimo = kpi.get("ultimo_mese_storico")
-        if ultimo:
-            self.lbl_ultimo_mese.configure(text=f"Ultimo mese pianificato: {ultimo}")
-        else:
-            self.lbl_ultimo_mese.configure(text="Nessun mese nello storico")
+        self.lbl_ultimo_mese.configure(
+            text=f"Ultimo mese pianificato: {ultimo}" if ultimo else "Nessun mese nello storico"
+        )
 
         # Avvisi
         avvisi: list[str] = []
@@ -96,25 +96,23 @@ class TabDashboard(ttk.Frame):
             )
         if kpi["fratelli_senza_associazione"]:
             avvisi.append(
-                f"Fratelli non associati a nessuna famiglia: "
+                f"Fratelli non associati: "
                 f"{', '.join(kpi['fratelli_senza_associazione'])}"
             )
         if bilancio < 0:
             avvisi.append(
-                f"ATTENZIONE: la capacita' totale ({kpi['capacita_totale']}) e' inferiore "
-                f"alla domanda mensile ({kpi['domanda_totale']}). "
-                f"Aumenta la capacita' dei fratelli o riduci le frequenze."
+                f"ATTENZIONE: capacita' ({kpi['capacita_totale']}) < "
+                f"domanda ({kpi['domanda_totale']}). Aumenta capacita' o riduci frequenze."
             )
         if kpi.get("n_indisponibilita", 0) > 0:
-            avvisi.append(f"{kpi['n_indisponibilita']} indisponibilita' temporanea/e registrate.")
+            avvisi.append(f"{kpi['n_indisponibilita']} indisponibilita' registrate.")
         if kpi.get("n_vincoli", 0) > 0:
             avvisi.append(f"{kpi['n_vincoli']} vincolo/i personalizzato/i attivi.")
-
         if not avvisi:
             avvisi.append("Tutto in ordine. Il sistema e' pronto per l'ottimizzazione.")
 
         self.txt_avvisi.configure(state="normal")
-        self.txt_avvisi.delete("1.0", tk.END)
+        self.txt_avvisi.delete("1.0", "end")
         for a in avvisi:
-            self.txt_avvisi.insert(tk.END, f"  {a}\n\n")
+            self.txt_avvisi.insert("end", f"  {a}\n\n")
         self.txt_avvisi.configure(state="disabled")
