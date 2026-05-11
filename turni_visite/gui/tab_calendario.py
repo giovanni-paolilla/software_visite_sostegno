@@ -7,6 +7,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from .themes import get_colors
+from ..i18n import t
 
 if TYPE_CHECKING:
     from ..repository import JsonRepository
@@ -18,6 +19,14 @@ _PALETTE = [
 ]
 
 
+def _text_color(hex_bg: str) -> str:
+    """Return black or white text color based on background luminance."""
+    hex_bg = hex_bg.lstrip("#")
+    r, g, b = int(hex_bg[0:2], 16), int(hex_bg[2:4], 16), int(hex_bg[4:6], 16)
+    luminance = 0.299 * r + 0.587 * g + 0.114 * b
+    return "#000000" if luminance > 140 else "#ffffff"
+
+
 class TabCalendario(ctk.CTkFrame):
     def __init__(self, parent, repo: "JsonRepository", **kw) -> None:
         super().__init__(parent, **kw)
@@ -27,9 +36,9 @@ class TabCalendario(ctk.CTkFrame):
     def _build(self) -> None:
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill="x", padx=10, pady=6)
-        ctk.CTkLabel(top, text="Calendario visite (da storico)",
+        ctk.CTkLabel(top, text=t("calendario.intestazione"),
                       font=ctk.CTkFont(size=14, weight="bold")).pack(side="left")
-        ctk.CTkButton(top, text="Aggiorna", width=100, command=self.refresh).pack(side="right")
+        ctk.CTkButton(top, text=t("aggiorna"), width=100, command=self.refresh).pack(side="right")
 
         # Scrollable area per il calendario
         self.scroll_frame = ctk.CTkScrollableFrame(self)
@@ -47,7 +56,7 @@ class TabCalendario(ctk.CTkFrame):
 
         storico = self.repo.get_storico_turni()
         if not storico:
-            ctk.CTkLabel(self.scroll_frame, text="Nessun dato nello storico.",
+            ctk.CTkLabel(self.scroll_frame, text=t("calendario.nessun_dato"),
                           text_color="gray50").pack(pady=20)
             return
 
@@ -60,7 +69,7 @@ class TabCalendario(ctk.CTkFrame):
         # Header mesi
         header = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
         header.pack(fill="x", pady=(0, 2))
-        ctk.CTkLabel(header, text="Famiglia", width=160, anchor="w",
+        ctk.CTkLabel(header, text=t("calendario.famiglia"), width=160, anchor="w",
                       font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, padx=2)
         for col, mese in enumerate(mesi, 1):
             ctk.CTkLabel(header, text=mese, width=120, anchor="center",
@@ -97,19 +106,21 @@ class TabCalendario(ctk.CTkFrame):
                     names = ", ".join(fr[:10] for fr in fratelli)
                     color = color_map.get(fratelli[0], "#999")
                     lbl = ctk.CTkLabel(cell, text=names, font=ctk.CTkFont(size=10),
-                                        text_color="white", fg_color=color,
+                                        text_color=_text_color(color), fg_color=color,
                                         corner_radius=4, height=28)
                     lbl.pack(fill="both", expand=True, padx=2, pady=2)
                 else:
                     ctk.CTkLabel(cell, text="-", text_color="gray50",
                                   font=ctk.CTkFont(size=10)).pack(expand=True)
 
-        # Legenda
-        ctk.CTkLabel(self.legend_frame, text="Legenda:",
+        # Legenda (wrapping: no limit on number of items)
+        ctk.CTkLabel(self.legend_frame, text=t("calendario.legenda"),
                       font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=4)
-        for fr in tutti_fratelli[:15]:
+        legend_wrap = ctk.CTkFrame(self.legend_frame, fg_color="transparent")
+        legend_wrap.pack(side="left", fill="x", expand=True)
+        for fr in tutti_fratelli:
             color = color_map.get(fr, "#999")
-            lbl = ctk.CTkLabel(self.legend_frame, text=f" {fr} ",
-                                font=ctk.CTkFont(size=10), text_color="white",
+            lbl = ctk.CTkLabel(legend_wrap, text=f" {fr} ",
+                                font=ctk.CTkFont(size=10), text_color=_text_color(color),
                                 fg_color=color, corner_radius=4, height=24)
-            lbl.pack(side="left", padx=2)
+            lbl.pack(side="left", padx=2, pady=1)

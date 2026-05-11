@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -13,6 +14,7 @@ from .config import (
     HEADER_FONT, BODY_FONT, PADDING,
     HEADER_FONT_TIGHT, BODY_FONT_TIGHT, PADDING_TIGHT,
 )
+from .domain import ValidazioneError
 from .weeks import slot_label_with_month
 
 
@@ -68,6 +70,11 @@ def export_pdf_mesi(
 
     dest = output_path or PDF_FILENAME
 
+    if output_path:
+        out = Path(output_path).resolve()
+        if not str(out).endswith(".pdf"):
+            raise ValidazioneError("Il percorso di output deve terminare con .pdf")
+
     styles = getSampleStyleSheet()
     style_title = ParagraphStyle(
         "TitleCustom",
@@ -111,7 +118,7 @@ def export_pdf_mesi(
         # Tabella per famiglia
         fam_rows = [["Famiglia", "Frequenza (mese)", "Fratelli assegnati (con settimana)"]]
         for fam in sorted(blocco["by_family"].keys()):
-            fr_list = blocco["by_family"][fam]
+            fr_list = blocco["by_family"].get(fam, [])
             freq = frequenze.get(fam, 2)
             items = [
                 f"{fr} [{slot_label_with_month(mese, freq, k, week_windows)}]"
@@ -124,8 +131,8 @@ def export_pdf_mesi(
         # Tabella per fratello (una riga per ogni assegnazione)
         bro_table = [["Data di visita", "Fratello", "Famiglia"]]
         for fr in sorted(blocco["by_brother"].keys()):
-            for fam in (blocco["by_brother"][fr] or []):
-                fr_list = blocco["by_family"][fam]
+            for fam in (blocco["by_brother"].get(fr, []) or []):
+                fr_list = blocco["by_family"].get(fam, [])
                 k_found = next(
                     (k for k, name in enumerate(fr_list) if name == fr),
                     None,
@@ -154,7 +161,7 @@ def export_pdf_mesi(
 
     try:
         doc = SimpleDocTemplate(
-            dest,
+            str(dest),
             pagesize=A4,
             leftMargin=PDF_MARGINS["left"],
             rightMargin=PDF_MARGINS["right"],

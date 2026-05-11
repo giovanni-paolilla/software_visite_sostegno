@@ -1,6 +1,6 @@
 """Test per turni_visite.service."""
 import pytest
-from turni_visite.domain import StoricoConflittoError
+from turni_visite.domain import StoricoConflittoError, NON_ASSEGNATO
 from turni_visite.service import conferma_e_salva_turni
 
 try:
@@ -89,11 +89,11 @@ class TestConfermaESalvaTurni:
         assert a["slot"] == 0
 
     def test_non_assegnato_non_salvato(self, repo_con_dati):
-        """Le voci '(non assegnato)' non devono entrare nello storico."""
+        """Le voci NON_ASSEGNATO non devono entrare nello storico."""
         sol = {
             "by_month": {
                 "2025-06": {
-                    "by_family": {"Famiglia Verdi": ["Mario Rossi", "(non assegnato)"]},
+                    "by_family": {"Famiglia Verdi": ["Mario Rossi", NON_ASSEGNATO]},
                     "by_brother": {"Mario Rossi": ["Famiglia Verdi"]},
                 }
             }
@@ -102,5 +102,5 @@ class TestConfermaESalvaTurni:
         storico = repo_con_dati.get_storico_turni()
         rec = next(r for r in storico if r["mese"] == "2025-06")
         fratelli_salvati = [a["fratello"] for a in rec["assegnazioni"]]
-        assert "(non assegnato)" not in fratelli_salvati
+        assert NON_ASSEGNATO not in fratelli_salvati
         assert "Mario Rossi" in fratelli_salvati

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "turni-visite"
-version = "0.2.0"
+version = "0.3.0"
 description = "Programma per l'assegnazione dei turni di visite di sostegno (Messina Ganzirri) con OR-Tools e PDF A4."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,18 +12,24 @@ authors = [
   { name = "Congregazione Messina-Ganzirri" }
 ]
 license = { text = "MIT" }
+keywords = ["turni", "visite", "scheduling", "congregazione"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 
 dependencies = [
   "ortools>=9.9,<10",
   "reportlab>=4.0,<5",
-  "customtkinter>=5.2,<6",
 ]
 
 [project.optional-dependencies]
+api = ["flask>=3.0"]
+gui = ["customtkinter>=5.2,<6"]
 dev = [
   "pytest>=8.0,<9",
-]
-api = [
   "flask>=3.0",
 ]
 
@@ -34,6 +40,10 @@ turni     = "turni_visite.cli:main"
 turni-gui = "turni_visite.gui_tk:main"
 # Avvio API REST: comando 'turni-api' da terminale
 turni-api = "turni_visite.api:main"
+
+[project.urls]
+Homepage = "https://github.com/giovanni-python/turni-visite_v4"
+Issues = "https://github.com/giovanni-python/turni-visite_v4/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["turni_visite"]

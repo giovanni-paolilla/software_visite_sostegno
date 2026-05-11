@@ -5,6 +5,7 @@ import customtkinter as ctk
 from typing import TYPE_CHECKING
 
 from .themes import get_colors
+from ..i18n import t
 
 if TYPE_CHECKING:
     from ..repository import JsonRepository
@@ -19,7 +20,7 @@ class TabDashboard(ctk.CTkFrame):
 
     def _build(self) -> None:
         # Titolo
-        ctk.CTkLabel(self, text="Dashboard", font=ctk.CTkFont(size=20, weight="bold")).pack(
+        ctk.CTkLabel(self, text=t("dashboard.titolo"), font=ctk.CTkFont(size=20, weight="bold")).pack(
             anchor="w", padx=16, pady=(12, 4))
 
         # Griglia KPI
@@ -28,12 +29,12 @@ class TabDashboard(ctk.CTkFrame):
 
         self.kpi_cards: dict[str, tuple[ctk.CTkLabel, ctk.CTkLabel]] = {}
         kpi_defs = [
-            ("n_fratelli_attivi", "Fratelli attivi"),
-            ("n_famiglie", "Famiglie"),
-            ("capacita_totale", "Capacita' totale"),
-            ("domanda_totale", "Domanda mensile"),
-            ("bilancio", "Bilancio (cap-dom)"),
-            ("n_mesi_storico", "Mesi storico"),
+            ("n_fratelli_attivi", t("dashboard.fratelli_attivi")),
+            ("n_famiglie", t("dashboard.famiglie")),
+            ("capacita_totale", t("dashboard.capacita_totale")),
+            ("domanda_totale", t("dashboard.domanda_mensile")),
+            ("bilancio", t("dashboard.bilancio")),
+            ("n_mesi_storico", t("dashboard.mesi_storico")),
         ]
         for col, (key, label) in enumerate(kpi_defs):
             card = ctk.CTkFrame(kpi_frame, corner_radius=10)
@@ -43,12 +44,12 @@ class TabDashboard(ctk.CTkFrame):
             val_lbl = ctk.CTkLabel(card, text="0", font=ctk.CTkFont(size=24, weight="bold"))
             val_lbl.pack(pady=(12, 2))
             title_lbl = ctk.CTkLabel(card, text=label, font=ctk.CTkFont(size=11),
-                                      text_color="gray50")
+                                      text_color=("gray40", "gray60"))
             title_lbl.pack(pady=(0, 10))
             self.kpi_cards[key] = (val_lbl, title_lbl)
 
         # Avvisi
-        avvisi_label = ctk.CTkLabel(self, text="Avvisi e suggerimenti",
+        avvisi_label = ctk.CTkLabel(self, text=t("dashboard.avvisi"),
                                      font=ctk.CTkFont(size=14, weight="bold"))
         avvisi_label.pack(anchor="w", padx=16, pady=(12, 4))
 
@@ -61,7 +62,7 @@ class TabDashboard(ctk.CTkFrame):
         bottom.pack(fill="x", padx=16, pady=(0, 12))
         self.lbl_ultimo_mese = ctk.CTkLabel(bottom, text="")
         self.lbl_ultimo_mese.pack(side="left")
-        ctk.CTkButton(bottom, text="Aggiorna", width=100, command=self.refresh).pack(side="right")
+        ctk.CTkButton(bottom, text=t("aggiorna"), width=100, command=self.refresh).pack(side="right")
 
     def refresh(self) -> None:
         kpi = self.repo.get_dashboard_kpi()
@@ -84,19 +85,19 @@ class TabDashboard(ctk.CTkFrame):
         # Ultimo mese
         ultimo = kpi.get("ultimo_mese_storico")
         self.lbl_ultimo_mese.configure(
-            text=f"Ultimo mese pianificato: {ultimo}" if ultimo else "Nessun mese nello storico"
+            text=f"{t('dashboard.ultimo_mese')}: {ultimo}" if ultimo else t("dashboard.nessun_mese")
         )
 
         # Avvisi
         avvisi: list[str] = []
         if kpi["famiglie_senza_associazione"]:
             avvisi.append(
-                f"Famiglie senza fratelli associati: "
+                f"{t('famiglie_senza_fratelli')}: "
                 f"{', '.join(kpi['famiglie_senza_associazione'])}"
             )
         if kpi["fratelli_senza_associazione"]:
             avvisi.append(
-                f"Fratelli non associati: "
+                f"{t('fratelli_non_associati')}: "
                 f"{', '.join(kpi['fratelli_senza_associazione'])}"
             )
         if bilancio < 0:
@@ -109,7 +110,7 @@ class TabDashboard(ctk.CTkFrame):
         if kpi.get("n_vincoli", 0) > 0:
             avvisi.append(f"{kpi['n_vincoli']} vincolo/i personalizzato/i attivi.")
         if not avvisi:
-            avvisi.append("Tutto in ordine. Il sistema e' pronto per l'ottimizzazione.")
+            avvisi.append(t("dashboard.tutto_ok"))
 
         self.txt_avvisi.configure(state="normal")
         self.txt_avvisi.delete("1.0", "end")

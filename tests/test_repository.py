@@ -155,6 +155,13 @@ class TestRemoveBrother:
         repo_popolato.remove_brother("Mario Rossi")
         assert "Mario Rossi" not in repo_popolato.fratelli
 
+    def test_rimosso_puo_essere_reinserito(self, repo):
+        repo.add_brother("Mario Rossi")
+        repo.remove_brother("Mario Rossi")
+        nome = repo.add_brother("Mario Rossi")
+        assert nome == "Mario Rossi"
+        assert "Mario Rossi" in repo.fratelli
+
     def test_rimuove_da_associazioni(self, repo_popolato):
         repo_popolato.remove_brother("Mario Rossi")
         for frs in repo_popolato.associazioni.values():
@@ -279,6 +286,23 @@ class TestSaveLoad:
         r = JsonRepository(str(tmp_path / "non_esiste.json"))
         assert len(r.fratelli) == 0
         assert len(r.famiglie) == 0
+
+    def test_reload_ricarica_dati(self, tmp_path):
+        fname = str(tmp_path / "reload_test.json")
+        repo = JsonRepository(fname)
+        repo.add_brother("Mario Rossi")
+        repo.save()
+
+        data = json.loads(open(fname, encoding="utf-8").read())
+        data["fratelli"] = ["Mario Rossi Modificato"]
+        data["capacita"]["Mario Rossi Modificato"] = data["capacita"].pop("Mario Rossi", 1)
+        with open(fname, "w", encoding="utf-8") as fh:
+            json.dump(data, fh)
+
+        repo.reload()
+
+        assert "Mario Rossi Modificato" in repo.fratelli
+        assert "Mario Rossi" not in repo.fratelli
 
     def test_save_atomica_no_file_parziale(self, repo_popolato, monkeypatch):
         """Se json.dump fallisce, il file originale deve rimanere intatto."""

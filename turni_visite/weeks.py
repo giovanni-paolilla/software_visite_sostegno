@@ -30,16 +30,26 @@ def parse_settimane_lista(raw: str, attese: int) -> tuple[list[str] | None, str]
         if not (1 <= ia <= 31 and 1 <= ib <= 31 and ia <= ib):
             return None, f"Giorni fuori range o invertiti: {p}"
         ok.append(f"{ia:02d}-{ib:02d}")
-    return ok, ""
+    sorted_intervals = sorted(ok, key=lambda p: int(p.split("-")[0]))
+    for i in range(len(sorted_intervals) - 1):
+        end_cur = int(sorted_intervals[i].split("-")[1])
+        start_next = int(sorted_intervals[i + 1].split("-")[0])
+        if end_cur >= start_next:
+            return None, f"Intervalli sovrapposti: {sorted_intervals[i]} e {sorted_intervals[i+1]}"
+    return sorted_intervals, ""
 
 
 def month_sigla(mese: str) -> str:
     """Converte 'YYYY-MM' nella sigla italiana del mese (es. 'Gen')."""
+    if not mese:
+        return ""
     sigle = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
     try:
         m = int(mese.split("-")[1])
+        if not (1 <= m <= 12):
+            return ""
         return sigle[m - 1]
-    except (IndexError, ValueError):
+    except (IndexError, ValueError, AttributeError):
         return ""
 
 

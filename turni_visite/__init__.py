@@ -7,7 +7,7 @@ Entry points:
   - GUI:  ``turni_visite.gui_tk:main``
   - API:  ``turni_visite.api:main``
 """
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # Repository e persistenza
@@ -22,6 +22,8 @@ __all__ = [
     # Export
     "export_pdf_mesi",
     "export_csv_mesi",
+    "export_csv_per_fratello",
+    "export_storico_csv",
     # Backup
     "create_backup",
     "list_backups",
@@ -47,7 +49,7 @@ from .service import (
     quick_check, modifica_assegnazione, open_file,
 )
 from .pdf_export import export_pdf_mesi
-from .csv_export import export_csv_mesi
+from .csv_export import export_csv_mesi, export_csv_per_fratello, export_storico_csv
 from .backup import create_backup, list_backups, restore_backup
 from .stats import report_carico_fratelli, calcola_indice_equita
 from .i18n import t, set_language

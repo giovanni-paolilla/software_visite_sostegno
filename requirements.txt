@@ -2,10 +2,12 @@
 # Su Linux potrebbe essere necessario installare: python3-tk
 ortools>=9.9,<10
 reportlab>=4.0,<5
-customtkinter>=5.2,<6
+
+# Per la GUI: pip install turni-visite[gui]
+# customtkinter>=5.2,<6
 
 # (facoltativi, per test)
 pytest>=8.0,<9
 
-# (facoltativi, per API REST)
+# Per l'API REST: pip install turni-visite[api]
 # flask>=3.0

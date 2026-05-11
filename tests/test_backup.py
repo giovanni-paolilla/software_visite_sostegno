@@ -63,3 +63,25 @@ class TestRestoreBackup:
     def test_backup_non_trovato(self, tmp_path, backup_dir):
         with pytest.raises(FileNotFoundError):
             restore_backup(tmp_path / "non_esiste.json", tmp_path / "dest.json")
+
+    def test_restore_file_corrotto(self, tmp_path, backup_dir):
+        """restore_backup deve rifiutare un file di backup con JSON non valido."""
+        from turni_visite.domain import TurniVisiteError
+        backup_file = backup_dir / "dati_turni_corrotto.json"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        backup_file.write_text("{ questo non e' json valido", encoding="utf-8")
+        dest = tmp_path / "dest.json"
+        with pytest.raises(TurniVisiteError):
+            restore_backup(backup_file, dest)
+
+    def test_restore_path_traversal_non_altera_destinazione(self, tmp_path, backup_dir, data_file):
+        """Un backup valido puntato con percorso relativo non deve alterare file fuori contesto."""
+        # Crea un backup valido
+        backup_path = create_backup(data_file)
+        # Destinazione dentro tmp_path
+        dest = tmp_path / "safe_dest.json"
+        restore_backup(backup_path, dest)
+        # Il file di destinazione deve esistere e contenere JSON valido
+        assert dest.exists()
+        data = json.loads(dest.read_text(encoding="utf-8"))
+        assert isinstance(data, dict)

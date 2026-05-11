@@ -1,8 +1,10 @@
 """Test per le nuove funzionalita' del repository v2 (indisponibilita', vincoli, audit, etc.)."""
+import logging
 import pytest
 from turni_visite.repository import JsonRepository
 from turni_visite.domain import (
     DuplicatoError, EntitaNonTrovata, ValidazioneError,
+    STATO_BOZZA_ACCETTATO,
 )
 
 
@@ -187,3 +189,176 @@ class TestDataSnapshot:
         repo.add_vincolo("Mario Rossi", "Luigi Bianchi", "incompatibile")
         snap = repo.data_snapshot()
         assert len(snap["vincoli_personalizzati"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Conferma bozza con fratello rimosso (Fix 29)
+# ---------------------------------------------------------------------------
+
+class TestConfermaBozzaFratelloRimosso:
+    def _bozza_solution(self, mese: str) -> dict:
+        return {
+            "by_month": {
+                mese: {
+                    "by_family": {
+                        "Famiglia Verdi": ["Mario Rossi", "Luigi Bianchi"],
+                    },
+                    "by_brother": {
+                        "Mario Rossi": ["Famiglia Verdi"],
+                        "Luigi Bianchi": ["Famiglia Verdi"],
+                    },
+                }
+            }
+        }
+
+    def test_conferma_bozza_fratello_rimosso_logga_warning(self, repo, caplog):
+        """Se un fratello viene rimosso dopo la creazione della bozza,
+        la conferma deve loggare un warning e ignorare l'assegnazione."""
+        mese = "2026-05"
+        # Salva la bozza con entrambi i fratelli
+        repo.save_bozza([mese], self._bozza_solution(mese))
+        # Accetta entrambe le assegnazioni
+        for a in repo.bozza_turni["assegnazioni"]:
+            a["stato"] = STATO_BOZZA_ACCETTATO
+
+        # Rimuove Mario Rossi prima della conferma
+        repo.remove_brother("Mario Rossi")
+
+        with caplog.at_level(logging.WARNING):
+            result = repo.conferma_bozza()
+
+        # La bozza deve essere stata consumata
+        assert repo.bozza_turni is None
+        # Deve essere presente almeno un warning per Mario Rossi
+        assert any("Mario Rossi" in msg for msg in caplog.messages)
+
+    def test_conferma_bozza_fratello_rimosso_salva_altri(self, repo):
+        """Le assegnazioni valide (fratello ancora presente) devono essere salvate."""
+        mese = "2026-06"
+        repo.save_bozza([mese], self._bozza_solution(mese))
+        # Accetta entrambe le assegnazioni
+        for a in repo.bozza_turni["assegnazioni"]:
+            a["stato"] = STATO_BOZZA_ACCETTATO
+
+        # Rimuove Mario Rossi
+        repo.remove_brother("Mario Rossi")
+        result = repo.conferma_bozza()
+
+        # Il mese deve essere nei salvati (ha ancora Luigi Bianchi)
+        assert mese in result["salvati"]
+        storico = repo.get_storico_turni()
+        ass_mese = next(r for r in storico if r["mese"] == mese)
+        fratelli_salvati = [a["fratello"] for a in ass_mese["assegnazioni"]]
+        assert "Luigi Bianchi" in fratelli_salvati
+        assert "Mario Rossi" not in fratelli_salvati
+
+    def test_conferma_bozza_normale_senza_rimozioni(self, repo):
+        """Senza rimozioni la bozza deve salvare tutte le assegnazioni accettate."""
+        mese = "2026-07"
+        repo.save_bozza([mese], self._bozza_solution(mese))
+        for a in repo.bozza_turni["assegnazioni"]:
+            a["stato"] = STATO_BOZZA_ACCETTATO
+
+        result = repo.conferma_bozza()
+        assert mese in result["salvati"]
+        storico = repo.get_storico_turni()
+        ass_mese = next(r for r in storico if r["mese"] == mese)
+        assert len(ass_mese["assegnazioni"]) == 2
+
+
+# ---------------------------------------------------------------------------
+# extend_storico_turni (Fix 30)
+# ---------------------------------------------------------------------------
+
+class TestExtendStoricoTurni:
+    """Usa il fixture repo che ha gia' Mario Rossi, Luigi Bianchi e Famiglia Verdi."""
+
+    def _ass(self, famiglia: str = "Famiglia Verdi", fratello: str = "Mario Rossi") -> list[dict]:
+        return [{"famiglia": famiglia, "fratello": fratello, "slot": 0}]
+
+    def test_batch_vuoto_ritorna_lista_vuota(self, repo):
+        result = repo.extend_storico_turni([])
+        assert result == []
+
+    def test_batch_record_validi(self, repo):
+        records = [
+            ("2026-01", self._ass()),
+            ("2026-02", self._ass()),
+        ]
+        result = repo.extend_storico_turni(records)
+        assert result == ["2026-01", "2026-02"]
+        assert repo.storico_has_mese("2026-01")
+        assert repo.storico_has_mese("2026-02")
+
+    def test_batch_salva_con_unico_save(self, repo, monkeypatch):
+        """Tutti i record vengono salvati con un singolo save()."""
+        save_count = 0
+
+        original_save = repo.save
+        def counting_save():
+            nonlocal save_count
+            save_count += 1
+            original_save()
+        monkeypatch.setattr(repo, "save", counting_save)
+
+        repo.extend_storico_turni([
+            ("2026-03", self._ass()),
+            ("2026-04", self._ass()),
+        ])
+        assert save_count == 1
+
+    def test_batch_con_mese_duplicato_atomicita(self, repo):
+        """Se un mese del batch e' gia' in storico, nessun record viene inserito."""
+        from turni_visite.domain import StoricoConflittoError
+        repo.append_storico_turni("2026-01", self._ass())
+
+        with pytest.raises(StoricoConflittoError):
+            repo.extend_storico_turni([
+                ("2026-02", self._ass()),
+                ("2026-01", self._ass()),  # gia' presente
+            ])
+
+        # 2026-02 non deve essere stato inserito (atomicita')
+        assert not repo.storico_has_mese("2026-02")
+
+    def test_batch_con_mese_duplicato_interno(self, repo):
+        """Se lo stesso mese compare due volte nel batch, viene bloccato."""
+        from turni_visite.domain import StoricoConflittoError
+
+        with pytest.raises(StoricoConflittoError):
+            repo.extend_storico_turni([
+                ("2026-05", self._ass()),
+                ("2026-05", self._ass()),
+            ])
+
+        assert not repo.storico_has_mese("2026-05")
+
+
+# ---------------------------------------------------------------------------
+# add_indisponibilita idempotenza (Fix 31)
+# ---------------------------------------------------------------------------
+
+class TestAddIndisponibilitaIdempotenza:
+    def test_doppia_chiamata_non_duplica_mese(self, repo):
+        """Chiamare add_indisponibilita due volte con lo stesso mese
+        non deve creare duplicati nella lista."""
+        repo.add_indisponibilita("Mario Rossi", "2026-03")
+        repo.add_indisponibilita("Mario Rossi", "2026-03")
+        indisp = repo.get_indisponibilita("Mario Rossi")
+        assert indisp.count("2026-03") == 1
+
+    def test_mesi_diversi_non_interferiscono(self, repo):
+        """Aggiungere mesi diversi funziona correttamente."""
+        repo.add_indisponibilita("Mario Rossi", "2026-03")
+        repo.add_indisponibilita("Mario Rossi", "2026-04")
+        repo.add_indisponibilita("Mario Rossi", "2026-03")  # duplicato
+        indisp = repo.get_indisponibilita("Mario Rossi")
+        assert sorted(indisp) == ["2026-03", "2026-04"]
+
+    def test_idempotenza_persistita(self, repo):
+        """L'idempotenza deve valere anche dopo il reload dal disco."""
+        repo.add_indisponibilita("Mario Rossi", "2026-03")
+        repo.add_indisponibilita("Mario Rossi", "2026-03")
+        r2 = JsonRepository(repo.filename)
+        indisp = r2.indisponibilita.get("Mario Rossi", [])
+        assert indisp.count("2026-03") == 1

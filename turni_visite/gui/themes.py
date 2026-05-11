@@ -27,6 +27,14 @@ COLORS = {
     },
 }
 
+# Colori centralizzati per pulsanti con semantica (tuple light/dark per CTk)
+BUTTON_COLORS = {
+    "danger": ("#d13438", "#c50f1f"),
+    "danger_hover": ("#a4262c", "#8b0000"),
+    "success": ("#107c10", "#0b5e0b"),
+    "success_hover": ("#0b5e0b", "#084c08"),
+}
+
 
 def set_appearance(mode: str = "System") -> None:
     """Imposta il tema: 'Light', 'Dark' o 'System'."""
@@ -39,6 +47,12 @@ def set_color_theme(theme: str = "blue") -> None:
 
 
 def get_colors() -> dict:
-    """Ritorna i colori accessori in base al tema corrente."""
+    """Ritorna i colori accessori in base al tema corrente (risolve anche 'System')."""
     mode = ctk.get_appearance_mode().lower()
+    # ctk.get_appearance_mode() può restituire 'System' se il tema non è ancora risolto:
+    # in quel caso fallback a 'light'.
+    if mode == "system":
+        mode = ctk.get_appearance_mode().lower()
+        if mode not in ("dark", "light"):
+            mode = "light"
     return COLORS.get(mode, COLORS["light"])

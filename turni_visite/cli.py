@@ -3,8 +3,10 @@ Interfaccia a riga di comando (CLI) per il programma Turni Visite.
 """
 from __future__ import annotations
 
+import csv
 import difflib
 import re
+from pathlib import Path
 
 from .logging_cfg import setup_logging
 from .config import DATA_FILE, DEFAULT_WEEK_TEMPLATES
@@ -18,8 +20,9 @@ from .backup import create_backup, list_backups, restore_backup
 from .stats import report_carico_fratelli, calcola_indice_equita
 from .service import (
     esegui_ottimizzazione, conferma_e_salva_turni, diagnosi_infeasible,
-    quick_check, open_file,
+    quick_check, open_file, trova_sostituto,
 )
+from .whatsapp_export import format_whatsapp_mesi
 from .domain import TurniVisiteError, StoricoConflittoError
 from .scheduling import validate_month_yyyy_mm
 
@@ -292,6 +295,12 @@ def _cmd_ottimizza(repo: JsonRepository, week_windows: dict) -> None:
         print(f"Errore nel salvataggio del PDF: {e}")
         pdf_ok = False
 
+    # WhatsApp
+    wa_choice = input("Vuoi esportare anche per WhatsApp? [s/N]: ").strip().lower()
+    if wa_choice == "s":
+        wa_text = format_whatsapp_mesi(mesi, result.solution, snap["frequenze"], week_windows)
+        print("\n" + wa_text + "\n")
+
     # CSV opzionale
     csv_choice = input("Vuoi esportare anche in CSV? [s/N]: ").strip().lower()
     if csv_choice == "s":
@@ -395,6 +404,13 @@ def _cmd_storico(repo: JsonRepository) -> None:
     az = input("\n(E)limina un mese, (D)ettaglio, (I)ndietro? [E/D/I]: ").strip().upper()
     if az == "E":
         mese = input("Mese da eliminare (YYYY-MM): ").strip()
+        if not mese:
+            return
+        try:
+            validate_month_yyyy_mm(mese)
+        except ValueError as e:
+            print(f"Formato mese non valido: {e}")
+            return
         conferma = input(f"Confermi l'eliminazione di '{mese}'? [s/N]: ").strip().lower()
         if conferma == "s":
             try:
@@ -439,10 +455,13 @@ def _cmd_indisponibilita(repo: JsonRepository) -> None:
             print(f"Errore: {e}")
     elif az == "R":
         mese = input("Mese da rimuovere (YYYY-MM): ").strip()
+        if not mese:
+            return
         try:
+            validate_month_yyyy_mm(mese)
             repo.remove_indisponibilita(fr, mese)
             print(f"Indisponibilita' rimossa: {fr} per {mese}")
-        except TurniVisiteError as e:
+        except (ValueError, TurniVisiteError) as e:
             print(f"Errore: {e}")
 
 
@@ -474,6 +493,9 @@ def _cmd_vincoli(repo: JsonRepository) -> None:
             return
         try:
             n = int(input("Numero vincolo da rimuovere: "))
+            if n <= 0:
+                print("Annullato.")
+                return
             v = vincoli[n - 1]
             repo.remove_vincolo(v["fratello_a"], v["fratello_b"], v["tipo"])
             print("Vincolo rimosso.")
@@ -489,7 +511,7 @@ def _cmd_backup(repo: JsonRepository) -> None:
     print("  0. Indietro")
     az = input("Scelta: ").strip()
     if az == "1":
-        path = create_backup(DATA_FILE)
+        path = create_backup(repo.filename)
         if path:
             print(f"Backup creato: {path}")
         else:
@@ -510,10 +532,13 @@ def _cmd_backup(repo: JsonRepository) -> None:
             print(f"  {i}. {b['filename']}  ({b['modified']})")
         try:
             n = int(input("Numero backup: "))
+            if n <= 0:
+                print("Annullato.")
+                return
             b = backups[n - 1]
             conferma = input(f"Ripristinare '{b['filename']}'? [s/N]: ").strip().lower()
             if conferma == "s":
-                restore_backup(b["path"], DATA_FILE)
+                restore_backup(b["path"], repo.filename)
                 repo.load()
                 print("Backup ripristinato. Dati ricaricati.")
         except (ValueError, IndexError, FileNotFoundError) as e:
@@ -546,12 +571,19 @@ def _cmd_statistiche(repo: JsonRepository) -> None:
 
 
 def _cmd_import_csv(repo: JsonRepository) -> None:
-    path = input("Percorso file CSV: ").strip()
-    if not path:
+    path_str = input("Percorso file CSV: ").strip()
+    if not path_str:
+        return
+    p = Path(path_str)
+    if not p.exists():
+        print(f"File non trovato: {path_str}")
+        return
+    if p.suffix.lower() != ".csv":
+        print("Il file deve avere estensione .csv")
         return
     try:
-        result = import_csv_anagrafica(path)
-    except Exception as e:
+        result = import_csv_anagrafica(path_str)
+    except (OSError, csv.Error, UnicodeDecodeError) as e:
         print(f"Errore lettura CSV: {e}")
         return
     n_fr = n_fam = 0
@@ -578,6 +610,82 @@ def _cmd_import_csv(repo: JsonRepository) -> None:
 # Entry point
 # ---------------------------------------------------------------------------
 
+def _cmd_sostituzione(repo: JsonRepository) -> None:
+    storico = repo.get_storico_turni()
+    if not storico:
+        print("\n(Nessun mese nello storico.)")
+        return
+    print("\nMesi disponibili:")
+    for rec in storico:
+        print(f"  - {rec.get('mese', '?')}")
+    mese = input("Mese (YYYY-MM): ").strip()
+    if not mese:
+        return
+    try:
+        validate_month_yyyy_mm(mese)
+    except ValueError as e:
+        print(f"Formato mese non valido: {e}")
+        return
+    bro = input("Fratello da sostituire: ").strip()
+    bro = _ask_fuzzy_name(bro, sorted(repo.fratelli), "fratelli")
+    if not bro:
+        return
+    candidati = trova_sostituto(repo, mese, bro)
+    if not candidati:
+        print("Nessun candidato disponibile.")
+        return
+    print("\nCandidati:")
+    for i, c in enumerate(candidati, 1):
+        print(f"  {i}. {c['fratello']} -> {c['famiglia']} slot {c['slot']} (carico: {c['carico_attuale']})")
+    try:
+        n = int(input("Numero candidato (0=annulla): "))
+        if n == 0:
+            return
+        c = candidati[n - 1]
+        repo.update_storico_assegnazione(mese, c["famiglia"], c["slot"], bro, c["fratello"])
+        print(f"Sostituzione effettuata: {bro} -> {c['fratello']}")
+    except (ValueError, IndexError, TurniVisiteError) as e:
+        print(f"Errore: {e}")
+
+
+def _cmd_affinita(repo: JsonRepository) -> None:
+    affinita = repo.get_affinita()
+    if affinita:
+        print("\nAffinita' fratello-famiglia:")
+        for i, a in enumerate(affinita, 1):
+            peso = a.get("peso", 0)
+            print(f"  {i}. {a['fratello']} -> {a['famiglia']} [peso: {peso:+d}]")
+    else:
+        print("\n(Nessuna affinita' configurata.)")
+    az = input("(A)ggiungi, (R)imuovi, (I)ndietro? [A/R/I]: ").strip().upper()
+    if az == "A":
+        fr = _ask_fuzzy_name(input("Fratello: ").strip(), sorted(repo.fratelli), "fratelli")
+        if not fr:
+            return
+        fam = _ask_fuzzy_name(input("Famiglia: ").strip(), sorted(repo.famiglie), "famiglie")
+        if not fam:
+            return
+        try:
+            peso = int(input("Peso (-10..+10): ").strip())
+            repo.add_affinita(fam, fr, peso)
+            print(f"Affinita' impostata: {fr} -> {fam} = {peso:+d}")
+        except (ValueError, TurniVisiteError) as e:
+            print(f"Errore: {e}")
+    elif az == "R":
+        if not affinita:
+            return
+        try:
+            n = int(input("Numero da rimuovere: "))
+            if n <= 0:
+                print("Annullato.")
+                return
+            a = affinita[n - 1]
+            repo.remove_affinita(a["famiglia"], a["fratello"])
+            print("Affinita' rimossa.")
+        except (ValueError, IndexError, TurniVisiteError) as e:
+            print(f"Errore: {e}")
+
+
 _MENU = """
 Menu:
  1.  Aggiungi un fratello
@@ -585,7 +693,7 @@ Menu:
  3.  Associa un fratello a una famiglia
  4.  Imposta/mostra frequenza (1,2,4)
  5.  Imposta/mostra capacita' (0..50)
- 6.  Ottimizza i turni (con pre-check, PDF, CSV)
+ 6.  Ottimizza i turni (con pre-check, PDF, CSV, WhatsApp)
  7.  Sanifica dati (normalizza + alias)
  8.  Elimina un fratello
  9.  Elimina una famiglia
@@ -596,7 +704,9 @@ Menu:
 14.  Statistiche e report
 15.  Import da CSV
 16.  Dashboard KPI
-17.  Esci"""
+17.  Sostituzione d'emergenza
+18.  Affinita' fratello-famiglia
+19.  Esci"""
 
 
 def _cmd_dashboard(repo: JsonRepository) -> None:
@@ -637,6 +747,8 @@ _HANDLERS = {
     14: _cmd_statistiche,
     15: _cmd_import_csv,
     16: _cmd_dashboard,
+    17: _cmd_sostituzione,
+    18: _cmd_affinita,
 }
 
 
@@ -654,12 +766,15 @@ def main() -> None:
     while True:
         print(_MENU)
         try:
-            scelta = int(input("Scegli un'opzione (1-17): "))
-        except ValueError:
+            scelta = int(input("Scegli un'opzione (1-19): "))
+        except (ValueError, EOFError):
             print("Opzione non valida.")
             continue
+        except KeyboardInterrupt:
+            print("\nUscita.")
+            break
 
-        if scelta == 17:
+        if scelta == 19:
             print("Uscita.")
             break
         elif scelta == 6:

@@ -6,6 +6,7 @@ from turni_visite.scheduling import (
     valida_soluzione,
     verifica_fattibilita,
     ottimizza_turni_mesi,
+    explain_infeasible,
 )
 
 
@@ -201,9 +202,37 @@ class TestOttimizzaTurniMesi:
         assert sol is not None
         assert set(sol["by_month"].keys()) == {"2025-03", "2025-04"}
 
+    @pytest.mark.skipif(not _ORTOOLS_OK, reason="ortools non installato")
+    def test_explain_infeasible_capacita_zero(self):
+        """explain_infeasible deve produrre una diagnosi non vuota quando tutti i fratelli
+        associati hanno capacita' zero."""
+        msg = explain_infeasible(
+            mesi=["2025-03"],
+            fratelli={"Solo"},
+            famiglie={"Fam A"},
+            associazioni={"Fam A": ["Solo"]},
+            frequenze={"Fam A": 2},
+            capacita={"Solo": 0},
+            storico_turni=[],
+            cooldown_mesi=1,
+        )
+        assert isinstance(msg, str) and len(msg) > 0, (
+            f"explain_infeasible deve restituire una stringa non vuota, ottenuto: {msg!r}"
+        )
+        assert any(
+            kw in msg.lower()
+            for kw in ("capacit", "supply", "insufficiente", "sblocco", "meno")
+        ), f"Diagnosi deve menzionare il problema di capacita', ottenuto: {msg!r}"
+
     def test_storico_vincola_primo_mese(self):
         """Se Mario ha visitato Fam A a 2025-02 con cooldown=2, non puo' farlo a 2025-03."""
         fr, fam, assoc, freq, cap = self._params_base()
+        # Aggiungiamo "Paolo" a Fam A per rendere il problema feasible anche quando
+        # Mario e Luigi sono bloccati dallo storico (cooldown=2) e servono 2 slot.
+        fr = fr | {"Paolo"}
+        assoc = {k: list(v) for k, v in assoc.items()}
+        assoc["Fam A"] = assoc["Fam A"] + ["Paolo"]
+        cap["Paolo"] = 2
         storico = [{
             "mese": "2025-02",
             "assegnazioni": [
@@ -218,7 +247,7 @@ class TestOttimizzaTurniMesi:
             storico_turni=storico,
             cooldown_mesi=2,
         )
-        if sol is not None:
-            slots_mar = sol["by_month"]["2025-03"]["by_family"].get("Fam A", [])
-            assert "Mario" not in slots_mar
-            assert "Luigi" not in slots_mar
+        assert sol is not None, "Il solver dovrebbe trovare una soluzione in questo scenario"
+        slots_mar = sol["by_month"]["2025-03"]["by_family"].get("Fam A", [])
+        assert "Mario" not in slots_mar
+        assert "Luigi" not in slots_mar

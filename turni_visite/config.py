@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 TITLE_TEXT = "PROGRAMMA VISITE DI SOSTEGNO - MESSINA GANZIRRI"
@@ -6,11 +7,11 @@ TITLE_TEXT = "PROGRAMMA VISITE DI SOSTEGNO - MESSINA GANZIRRI"
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 # Percorsi stabili (evita problemi se avvii da una cartella diversa)
-DATA_FILE = PROJECT_DIR / "dati_turni.json"
+DATA_FILE = Path(os.environ.get("TURNI_DATA_FILE", str(PROJECT_DIR / "dati_turni.json")))
 PDF_FILENAME = PROJECT_DIR / "turni_visite.pdf"
 
 # Backup
-BACKUP_DIR = PROJECT_DIR / "backups"
+BACKUP_DIR = Path(os.environ.get("TURNI_BACKUP_DIR", str(PROJECT_DIR / "backups")))
 MAX_BACKUPS = 10  # rotazione: mantieni gli ultimi N backup
 
 # PDF base margins (pt)
@@ -33,11 +34,12 @@ BODY_FONT_TIGHT = 8
 PADDING_TIGHT = 2
 
 # Solver defaults
-SOLVER_TIMEOUT_SECONDS = 20.0
+SOLVER_TIMEOUT_SECONDS = min(
+    float(os.environ.get("TURNI_SOLVER_TIMEOUT", "30")),
+    300.0
+)
+API_SOLVER_TIMEOUT = min(SOLVER_TIMEOUT_SECONDS, 60.0)
 SOLVER_MAX_WORKERS = 8
-
-# Audit trail
-AUDIT_FILE = PROJECT_DIR / "logs" / "audit.log"
 
 # Default week window templates per frequenza
 DEFAULT_WEEK_TEMPLATES: dict[int, list[str]] = {

@@ -20,6 +20,15 @@ class CTkListbox(ctk.CTkScrollableFrame):
         self._command = command
         self._normal_color = "transparent"
         self._selected_color = ("gray70", "gray30")
+        self._rebuild_after_id: str | None = None
+
+        # Abilita ricezione focus per navigazione da tastiera
+        try:
+            self._parent_frame.configure(takefocus=True)
+        except Exception:
+            pass
+        self.bind("<Up>", self._on_key_up)
+        self.bind("<Down>", self._on_key_down)
 
     def insert(self, index: int | str, text: str) -> None:
         if index == tk.END or index == "end":
@@ -27,6 +36,10 @@ class CTkListbox(ctk.CTkScrollableFrame):
         else:
             idx = int(index)
         self._items.insert(idx, text)
+        self._schedule_rebuild()
+
+    def batch_insert(self, items: list[str]) -> None:
+        self._items.extend(items)
         self._rebuild()
 
     def delete(self, first: int | str, last: int | str | None = None) -> None:
@@ -39,6 +52,19 @@ class CTkListbox(ctk.CTkScrollableFrame):
             end = int(last) + 1
         del self._items[start:end]
         self._selected = None
+        self._schedule_rebuild()
+
+    def _schedule_rebuild(self) -> None:
+        """Pianifica il rebuild in modo debounced per evitare rebuild multipli ravvicinati."""
+        if self._rebuild_after_id is not None:
+            try:
+                self.after_cancel(self._rebuild_after_id)
+            except Exception:
+                pass
+        self._rebuild_after_id = self.after(10, self._do_rebuild)
+
+    def _do_rebuild(self) -> None:
+        self._rebuild_after_id = None
         self._rebuild()
 
     def get(self, index: int) -> str:
@@ -56,6 +82,16 @@ class CTkListbox(ctk.CTkScrollableFrame):
         for btn in self._buttons:
             btn.destroy()
         self._buttons.clear()
+        if not self._items:
+            # Empty state: mostra un placeholder
+            placeholder = ctk.CTkLabel(
+                self, text="(nessun elemento)",
+                text_color=("gray50", "gray60"),
+                font=ctk.CTkFont(size=11, slant="italic"),
+            )
+            placeholder.pack(pady=8)
+            self._buttons.append(placeholder)  # type: ignore[arg-type]
+            return
         for i, text in enumerate(self._items):
             btn = ctk.CTkButton(
                 self, text=text, anchor="w",
@@ -78,6 +114,35 @@ class CTkListbox(ctk.CTkScrollableFrame):
             self._command()
         self.event_generate("<<ListboxSelect>>")
 
+    def _on_key_up(self, _event=None) -> str:
+        if not self._items:
+            return "break"
+        if self._selected is None:
+            new_idx = len(self._items) - 1
+        else:
+            new_idx = max(0, self._selected - 1)
+        self._on_click(new_idx)
+        return "break"
+
+    def _on_key_down(self, _event=None) -> str:
+        if not self._items:
+            return "break"
+        if self._selected is None:
+            new_idx = 0
+        else:
+            new_idx = min(len(self._items) - 1, self._selected + 1)
+        self._on_click(new_idx)
+        return "break"
+
+    def destroy(self) -> None:
+        if self._rebuild_after_id is not None:
+            try:
+                self.after_cancel(self._rebuild_after_id)
+            except Exception:
+                pass
+            self._rebuild_after_id = None
+        super().destroy()
+
 
 class FilterableComboBox(ctk.CTkComboBox):
     """
@@ -92,6 +157,7 @@ class FilterableComboBox(ctk.CTkComboBox):
         self._prefix_idx: int = 0
         self._after_id: str | None = None
         self._reset_ms = reset_ms
+        self.set("")
         # Bind keyboard — CTkComboBox espone _entry internamente
         try:
             entry = self._entry
@@ -99,6 +165,12 @@ class FilterableComboBox(ctk.CTkComboBox):
             entry = self
         entry.bind("<KeyPress>", self._on_key, add="+")
         entry.bind("<FocusOut>", lambda _e: self._reset(), add="+")
+
+    def destroy(self) -> None:
+        if hasattr(self, '_after_id') and self._after_id is not None:
+            self.after_cancel(self._after_id)
+            self._after_id = None
+        super().destroy()
 
     def configure(self, **kwargs) -> None:
         if "values" in kwargs:

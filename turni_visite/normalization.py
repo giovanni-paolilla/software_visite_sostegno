@@ -3,6 +3,16 @@ import unicodedata
 import difflib
 
 
+def _is_valid_name_char(c: str) -> bool:
+    """
+    Verifica se un carattere e' ammesso in un nome:
+    - Lettera Unicode (categoria che inizia con "L")
+    - Spazio, apostrofo, trattino, punto
+    """
+    cat = unicodedata.category(c)
+    return cat.startswith("L") or c in " '-."
+
+
 def canonicalizza_nome(raw: str | None) -> str | None:
     """
     Normalizza un nome proprio in forma canonica (title-case, spazi ridotti,
@@ -13,14 +23,17 @@ def canonicalizza_nome(raw: str | None) -> str | None:
     if raw is None:
         return None
     s = unicodedata.normalize("NFKC", raw)
-    s = s.replace("\u00A0", " ")
+    s = s.replace(" ", " ")
     s = s.strip()
     s = re.sub(r"\s+", " ", s)
-    s = s.replace("\u2019", "'")   # apostrofo curvo → dritto
-    s = s.replace("\u2018", "'")
-    if not s or not re.match(r"^[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\s'\-\.]+$", s):
+    s = s.replace("’", "'")   # apostrofo curvo → dritto
+    s = s.replace("‘", "'")
+    if not s or not all(_is_valid_name_char(c) for c in s):
         return None
-    return s.title()
+    s = " ".join(s.split()).title()
+    if not any(c.isalpha() for c in s):
+        return None
+    return s
 
 
 def trova_alias_simili(

@@ -25,6 +25,11 @@ class TestExportCsvMesi:
         with open(out, encoding="utf-8-sig") as f:
             rows = list(csv.reader(f, delimiter=";"))
         assert len(rows) >= 3  # header + 2 righe
+        contenuto = [";".join(r) for r in rows]
+        assert any("Mario Rossi" in riga for riga in contenuto)
+        assert any("Luigi Bianchi" in riga for riga in contenuto)
+        assert any("Fam A" in riga for riga in contenuto)
+        assert any("Fam B" in riga for riga in contenuto)
 
     def test_nessuna_soluzione(self, tmp_path):
         out = tmp_path / "vuoto.csv"
@@ -37,6 +42,11 @@ class TestExportCsvPerFratello:
         out = tmp_path / "fratelli.csv"
         export_csv_per_fratello(["2026-01"], _solution(), {"Fam A": 1, "Fam B": 1}, {}, out)
         assert out.exists()
+        with open(out, encoding="utf-8-sig") as f:
+            rows = list(csv.reader(f, delimiter=";"))
+        contenuto = [";".join(r) for r in rows]
+        assert any("Mario Rossi" in riga for riga in contenuto)
+        assert any("Luigi Bianchi" in riga for riga in contenuto)
 
 
 class TestExportStoricoCsv:
@@ -48,6 +58,11 @@ class TestExportStoricoCsv:
         out = tmp_path / "storico.csv"
         export_storico_csv(storico, out)
         assert out.exists()
+        with open(out, encoding="utf-8-sig") as f:
+            rows = list(csv.reader(f, delimiter=";"))
+        contenuto = [";".join(r) for r in rows]
+        assert any("Mario" in riga for riga in contenuto)
+        assert any("Fam A" in riga for riga in contenuto)
 
 
 class TestImportCsvAnagrafica:

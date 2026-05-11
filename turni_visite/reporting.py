@@ -1,3 +1,5 @@
+import logging
+
 from .weeks import slot_label_with_month
 
 
@@ -15,6 +17,10 @@ def print_reports_mesi(
     for mese in mesi:
         blocco = solution["by_month"].get(mese)
         if not blocco:
+            continue
+
+        if not isinstance(blocco.get("by_family"), dict) or not isinstance(blocco.get("by_brother"), dict):
+            logging.warning("Struttura blocco malformata, skip report per mese %s", mese)
             continue
 
         print(f"\n=== Mese {mese} — Visite per FAMIGLIA ===")

@@ -1,5 +1,6 @@
 """Test per le nuove funzionalita' del service layer v2."""
 import pytest
+from turni_visite.domain import ValidazioneError
 from turni_visite.service import modifica_assegnazione, quick_check
 
 
@@ -16,21 +17,22 @@ class TestModificaAssegnazione:
 
     def test_modifica_slot(self):
         sol = self._solution()
-        modifica_assegnazione(sol, "2026-01", "Fam A", 0, "Carla")
+        # modifica_assegnazione ritorna una copia modificata (deepcopy)
+        sol = modifica_assegnazione(sol, "2026-01", "Fam A", 0, "Carla")
         assert sol["by_month"]["2026-01"]["by_family"]["Fam A"][0] == "Carla"
         assert "Fam A" in sol["by_month"]["2026-01"]["by_brother"]["Carla"]
         assert "Fam A" not in sol["by_month"]["2026-01"]["by_brother"]["Mario"]
 
     def test_mese_non_trovato(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidazioneError):
             modifica_assegnazione(self._solution(), "2099-01", "Fam A", 0, "X")
 
     def test_famiglia_non_trovata(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidazioneError):
             modifica_assegnazione(self._solution(), "2026-01", "Fam Z", 0, "X")
 
     def test_slot_non_valido(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidazioneError):
             modifica_assegnazione(self._solution(), "2026-01", "Fam A", 99, "X")
 
 
@@ -61,4 +63,5 @@ class TestQuickCheck:
         snap = self._snap()
         snap["indisponibilita"] = {"Mario": ["2026-01"]}
         result = quick_check(snap, ["2026-01"], [], 3)
-        assert len(result["avvisi"]) > 0 or len(result["problemi"]) > 0
+        assert any("Mario" in a or "indisponibil" in a.lower() for a in result.get("avvisi", [])), \
+            f"Avvisi attesi per Mario indisponibile, trovato: {result}"

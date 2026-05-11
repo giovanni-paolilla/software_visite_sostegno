@@ -46,6 +46,9 @@ class Fratello:
     capacita: int = 1
 
     def __post_init__(self) -> None:
+        self.nome = self.nome.strip()
+        if not self.nome:
+            raise ValidazioneError("Il nome non può essere vuoto")
         if not isinstance(self.capacita, int) or not (0 <= self.capacita <= 50):
             raise ValidazioneError(
                 f"Capacita non valida per '{self.nome}': deve essere un intero 0..50."
@@ -59,6 +62,9 @@ class Famiglia:
     fratelli_associati: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
+        self.nome = self.nome.strip()
+        if not self.nome:
+            raise ValidazioneError("Il nome non può essere vuoto")
         if self.frequenza not in (1, 2, 4):
             raise ValidazioneError(
                 f"Frequenza non valida per '{self.nome}': usa 1, 2 o 4."
@@ -81,9 +87,14 @@ class SolverResult:
     - ``feasible``: True se il solver ha trovato almeno una soluzione.
     - ``solution``: dizionario ``{by_month: {mese: {by_family, by_brother}}}``
       prodotto da ``ottimizza_turni_mesi``; None se infeasible.
+    - ``warnings``: messaggi diagnostici (es. preferenze ignorate per fattibilita').
+    - ``affinita_ignorate``: True se la soluzione e' stata trovata scartando
+      le preferenze di affinita'.
     """
     feasible: bool
     solution: dict[str, Any] | None = None
+    warnings: list[str] = field(default_factory=list)
+    affinita_ignorate: bool = False
 
 
 @dataclass
@@ -102,3 +113,26 @@ class VincoloPersonalizzato:
     fratello_b: str
     tipo: str  # "incompatibile" | "preferenza_coppia"
     descrizione: str = ""
+
+
+@dataclass
+class AffinitaFamiglia:
+    """Affinita' fratello-famiglia: peso positivo = preferenza, negativo = evitare."""
+    famiglia: str
+    fratello: str
+    peso: int  # -10..+10
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.peso, int) or not (-10 <= self.peso <= 10):
+            raise ValidazioneError(
+                f"Peso affinita' deve essere un intero tra -10 e +10, ricevuto: {self.peso}"
+            )
+
+
+STATO_BOZZA_PROPOSTO = "proposto"
+STATO_BOZZA_ACCETTATO = "accettato"
+STATO_BOZZA_RIFIUTATO = "rifiutato"
+
+STATO_ESECUZIONE_PIANIFICATO = "pianificato"
+STATO_ESECUZIONE_COMPLETATO = "completato"
+STATO_ESECUZIONE_ANNULLATO = "annullato"
