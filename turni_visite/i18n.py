@@ -131,6 +131,12 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "pianificazione.scarta_bozza": "Scarta bozza",
         "pianificazione.accetta_tutti": "Accetta tutti",
         "pianificazione.rifiuta_tutti": "Rifiuta tutti",
+        "pianificazione.tab_revisione": "Revisione",
+        "pianificazione.tab_dettaglio": "Dettaglio",
+        "pianificazione.per_famiglia": "Per Famiglia",
+        "pianificazione.per_fratello": "Per Fratello",
+        "pianificazione.tutti_fratelli": "(tutti)",
+        "pianificazione.nessuna_assegnazione": "Nessuna assegnazione",
 
         # Sostituzione
         "sostituzione.titolo": "Sostituzione d'emergenza",
@@ -322,6 +328,12 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "pianificazione.scarta_bozza": "Discard draft",
         "pianificazione.accetta_tutti": "Accept all",
         "pianificazione.rifiuta_tutti": "Reject all",
+        "pianificazione.tab_revisione": "Review",
+        "pianificazione.tab_dettaglio": "Detail",
+        "pianificazione.per_famiglia": "By Family",
+        "pianificazione.per_fratello": "By Brother",
+        "pianificazione.tutti_fratelli": "(all)",
+        "pianificazione.nessuna_assegnazione": "No assignments",
 
         # Substitution
         "sostituzione.titolo": "Emergency substitution",

@@ -163,7 +163,7 @@ def modifica_assegnazione(
     solution.pop("_warnings", None)
     warnings: list[str] = []
 
-    if repo is not None:
+    if repo is not None and nuovo_fratello != NON_ASSEGNATO:
         if nuovo_fratello not in repo.associazioni.get(famiglia, []):
             raise ValidazioneError(
                 f"Il fratello '{nuovo_fratello}' non e' associato alla famiglia '{famiglia}'."

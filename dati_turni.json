@@ -1,4 +1,5 @@
 {
+    "schema_version": 3,
     "fratelli": [
         "Arena",
         "Bellinghieri M",
@@ -38,56 +39,29 @@
         "Valenti Maria"
     ],
     "associazioni": {
-        "Valenti Maria": [
-            "Arena",
-            "Bettia A",
-            "Bettia R",
-            "Fasone",
-            "La Motta",
-            "Milanese",
-            "Riccio",
-            "Smedile G",
-            "Urdi"
-        ],
-        "Paone": [
-            "Arena",
-            "Bettia A",
-            "Bettia R",
-            "Cipriani A",
-            "Fasone",
-            "La Motta",
-            "Milanese",
-            "Paolilla",
-            "Petrosino",
-            "Piccolo M",
-            "Riccio",
-            "Smedile G",
-            "Suranga",
-            "Urdi",
-            "Sindona",
-            "Minutoli"
-        ],
-        "Quagliata Maria": [
+        "Cammaroto Anna": [
             "Arena",
             "Bellinghieri M",
             "Bettia A",
-            "Cipriani A",
-            "Cipriani G",
             "Fasone",
             "La Bruna",
-            "La Motta",
             "Milanese",
-            "Neri R",
             "Paolilla",
-            "Piccolo M",
             "Riccio",
-            "Rinaldo",
-            "Smedile G",
-            "Smedile V",
-            "Suranga",
-            "Urdi",
             "Sindona",
-            "Minutoli"
+            "Urdi"
+        ],
+        "Cento Ninfa": [
+            "Bettia A",
+            "Bettia R",
+            "Cipriani A",
+            "Fasone",
+            "Milanese",
+            "Paolilla",
+            "Riccio",
+            "Sindona",
+            "Smedile G",
+            "Urdi"
         ],
         "Farina Maria": [
             "Arena",
@@ -98,40 +72,18 @@
             "La Bruna",
             "La Motta",
             "Milanese",
+            "Minutoli",
             "Neri R",
             "Paolilla",
             "Petrosino",
             "Piccolo M",
             "Riccio",
             "Rinaldo",
+            "Sindona",
             "Smedile G",
             "Smedile V",
             "Suranga",
-            "Urdi",
-            "Sindona",
-            "Minutoli"
-        ],
-        "Stramandino": [
-            "Arena",
-            "Bellinghieri M",
-            "Bettia A",
-            "Bettia R",
-            "Cipriani A",
-            "Cipriani G",
-            "Fasone",
-            "La Bruna",
-            "La Motta",
-            "Milanese",
-            "Neri R",
-            "Paolilla",
-            "Riccio",
-            "Rinaldo",
-            "Smedile G",
-            "Smedile V",
-            "Suranga",
-            "Urdi",
-            "Sindona",
-            "Minutoli"
+            "Urdi"
         ],
         "Impollonia": [
             "Arena",
@@ -145,41 +97,8 @@
             "Paolilla",
             "Riccio",
             "Rinaldo",
-            "Urdi",
-            "Sindona"
-        ],
-        "Pellegrino": [
-            "Arena",
-            "Bellinghieri M",
-            "Bettia A",
-            "Cipriani A",
-            "Cipriani G",
-            "Fasone",
-            "La Bruna",
-            "Milanese",
-            "Neri R",
-            "Paolilla",
-            "Piccolo M",
-            "Riccio",
-            "Rinaldo",
-            "Smedile G",
-            "Smedile V",
-            "Suranga",
-            "Urdi",
             "Sindona",
-            "Minutoli"
-        ],
-        "Cento Ninfa": [
-            "Bettia R",
-            "Bettia A",
-            "Cipriani A",
-            "Fasone",
-            "Milanese",
-            "Paolilla",
-            "Riccio",
-            "Smedile G",
-            "Urdi",
-            "Sindona"
+            "Urdi"
         ],
         "Lo Schiavo Pina": [
             "Arena",
@@ -213,68 +132,723 @@
             "Smedile G",
             "Urdi"
         ],
-        "Romeo Maria": [
+        "Paone": [
             "Arena",
-            "Urdi",
-            "Milanese",
+            "Bettia A",
             "Bettia R",
-            "Smedile G",
+            "Cipriani A",
+            "Fasone",
+            "La Motta",
+            "Milanese",
+            "Minutoli",
+            "Paolilla",
+            "Petrosino",
+            "Piccolo M",
             "Riccio",
-            "Bettia A"
+            "Sindona",
+            "Smedile G",
+            "Suranga",
+            "Urdi"
         ],
-        "Cammaroto Anna": [
+        "Pellegrino": [
             "Arena",
             "Bellinghieri M",
             "Bettia A",
+            "Cipriani A",
+            "Cipriani G",
             "Fasone",
             "La Bruna",
             "Milanese",
+            "Minutoli",
+            "Neri R",
+            "Paolilla",
+            "Piccolo M",
+            "Riccio",
+            "Rinaldo",
+            "Sindona",
+            "Smedile G",
+            "Smedile V",
+            "Suranga",
+            "Urdi"
+        ],
+        "Quagliata Maria": [
+            "Arena",
+            "Bellinghieri M",
+            "Bettia A",
+            "Cipriani A",
+            "Cipriani G",
+            "Fasone",
+            "La Bruna",
+            "La Motta",
+            "Milanese",
+            "Minutoli",
+            "Neri R",
+            "Paolilla",
+            "Piccolo M",
+            "Riccio",
+            "Rinaldo",
+            "Sindona",
+            "Smedile G",
+            "Smedile V",
+            "Suranga",
+            "Urdi"
+        ],
+        "Romeo Maria": [
+            "Arena",
+            "Bettia A",
+            "Bettia R",
+            "Milanese",
+            "Riccio",
+            "Smedile G",
+            "Urdi"
+        ],
+        "Stramandino": [
+            "Arena",
+            "Bellinghieri M",
+            "Bettia A",
+            "Bettia R",
+            "Cipriani A",
+            "Cipriani G",
+            "Fasone",
+            "La Bruna",
+            "La Motta",
+            "Milanese",
+            "Minutoli",
+            "Neri R",
             "Paolilla",
             "Riccio",
-            "Urdi",
-            "Sindona"
+            "Rinaldo",
+            "Sindona",
+            "Smedile G",
+            "Smedile V",
+            "Suranga",
+            "Urdi"
+        ],
+        "Valenti Maria": [
+            "Arena",
+            "Bettia A",
+            "Bettia R",
+            "Fasone",
+            "La Motta",
+            "Milanese",
+            "Riccio",
+            "Smedile G",
+            "Urdi"
         ]
     },
     "frequenze": {
-        "Quagliata Maria": 2,
-        "Orecchio": 2,
-        "Paone": 2,
-        "Lo Schiavo Pina": 2,
+        "Valenti Maria": 2,
+        "Cammaroto Anna": 1,
+        "Stramandino": 2,
         "Farina Maria": 2,
         "Pellegrino": 2,
-        "Stramandino": 2,
-        "Cento Ninfa": 2,
-        "Valenti Maria": 2,
-        "Impollonia": 2,
+        "Quagliata Maria": 2,
         "Romeo Maria": 1,
-        "Cammaroto Anna": 1
+        "Cento Ninfa": 2,
+        "Impollonia": 2,
+        "Paone": 2,
+        "Lo Schiavo Pina": 2,
+        "Orecchio": 2
     },
     "capacita": {
-        "Piccolo M": 1,
-        "Milanese": 1,
-        "Minutoli": 1,
-        "La Motta": 1,
-        "Bettia R": 1,
-        "Suranga": 1,
-        "Neri R": 1,
-        "Cipriani A": 1,
-        "Smedile V": 1,
-        "Smedile G": 1,
-        "La Bruna": 1,
+        "Bettia A": 1,
+        "Cipriani G": 1,
+        "Fasone": 1,
         "Paolilla": 1,
         "Urdi": 1,
-        "Sindona": 1,
-        "Petrosino": 1,
-        "Rinaldo": 1,
-        "Arena": 1,
-        "Bettia A": 1,
-        "Fasone": 1,
+        "Milanese": 1,
+        "Minutoli": 1,
         "Riccio": 1,
+        "Sindona": 1,
         "Bellinghieri M": 1,
-        "Cipriani G": 1
+        "Piccolo M": 1,
+        "Cipriani A": 1,
+        "Neri R": 1,
+        "Smedile G": 1,
+        "Rinaldo": 1,
+        "Smedile V": 1,
+        "La Bruna": 1,
+        "Suranga": 1,
+        "La Motta": 1,
+        "Bettia R": 1,
+        "Arena": 1,
+        "Petrosino": 1
     },
-    "storico_turni": [],
     "settings": {
-        "cooldown_mesi": 3
-    }
+        "cooldown_mesi": 3,
+        "solver_timeout": 60.0,
+        "solver_workers": 8
+    },
+    "storico_turni": [
+        {
+            "mese": "2026-02",
+            "created_at": "2026-05-11T16:09:38+00:00",
+            "confirmed_at": "2026-05-11T16:09:38+00:00",
+            "assegnazioni": [
+                {
+                    "famiglia": "Cammaroto Anna",
+                    "fratello": "Urdi",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Cento Ninfa",
+                    "fratello": "Sindona",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Cento Ninfa",
+                    "fratello": "Cipriani A",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Farina Maria",
+                    "fratello": "Neri R",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Farina Maria",
+                    "fratello": "Milanese",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Impollonia",
+                    "fratello": "Rinaldo",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Impollonia",
+                    "fratello": "Fasone",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Lo Schiavo Pina",
+                    "fratello": "Smedile V",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Lo Schiavo Pina",
+                    "fratello": "Bellinghieri M",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Orecchio",
+                    "fratello": "Smedile G",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Orecchio",
+                    "fratello": "Cipriani G",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Paone",
+                    "fratello": "Petrosino",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Paone",
+                    "fratello": "Piccolo M",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Pellegrino",
+                    "fratello": "La Bruna",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Pellegrino",
+                    "fratello": "Arena",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Quagliata Maria",
+                    "fratello": "Bettia A",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Quagliata Maria",
+                    "fratello": "Suranga",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Romeo Maria",
+                    "fratello": "Bettia R",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Stramandino",
+                    "fratello": "Paolilla",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Stramandino",
+                    "fratello": "Minutoli",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Valenti Maria",
+                    "fratello": "La Motta",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Valenti Maria",
+                    "fratello": "Riccio",
+                    "slot": 1
+                }
+            ]
+        },
+        {
+            "mese": "2026-03",
+            "created_at": "2026-05-11T16:09:38+00:00",
+            "confirmed_at": "2026-05-11T16:09:38+00:00",
+            "assegnazioni": [
+                {
+                    "famiglia": "Cammaroto Anna",
+                    "fratello": "Sindona",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Cento Ninfa",
+                    "fratello": "Bettia R",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Cento Ninfa",
+                    "fratello": "Riccio",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Farina Maria",
+                    "fratello": "Suranga",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Farina Maria",
+                    "fratello": "Minutoli",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Impollonia",
+                    "fratello": "Arena",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Impollonia",
+                    "fratello": "Cipriani G",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Lo Schiavo Pina",
+                    "fratello": "La Bruna",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Lo Schiavo Pina",
+                    "fratello": "Petrosino",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Orecchio",
+                    "fratello": "Piccolo M",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Orecchio",
+                    "fratello": "Milanese",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Paone",
+                    "fratello": "Smedile G",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Paone",
+                    "fratello": "La Motta",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Pellegrino",
+                    "fratello": "Paolilla",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Pellegrino",
+                    "fratello": "Cipriani A",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Quagliata Maria",
+                    "fratello": "Bellinghieri M",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Quagliata Maria",
+                    "fratello": "Neri R",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Romeo Maria",
+                    "fratello": "Urdi",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Stramandino",
+                    "fratello": "Smedile V",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Stramandino",
+                    "fratello": "Rinaldo",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Valenti Maria",
+                    "fratello": "Bettia A",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Valenti Maria",
+                    "fratello": "Fasone",
+                    "slot": 1
+                }
+            ]
+        },
+        {
+            "mese": "2026-04",
+            "created_at": "2026-05-11T16:09:38+00:00",
+            "confirmed_at": "2026-05-11T16:09:38+00:00",
+            "assegnazioni": [
+                {
+                    "famiglia": "Cammaroto Anna",
+                    "fratello": "Bellinghieri M",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Cento Ninfa",
+                    "fratello": "Smedile G",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Cento Ninfa",
+                    "fratello": "Paolilla",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Farina Maria",
+                    "fratello": "Piccolo M",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Farina Maria",
+                    "fratello": "Cipriani G",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Impollonia",
+                    "fratello": "Sindona",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Impollonia",
+                    "fratello": "La Bruna",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Lo Schiavo Pina",
+                    "fratello": "Cipriani A",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Lo Schiavo Pina",
+                    "fratello": "La Motta",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Orecchio",
+                    "fratello": "Petrosino",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Orecchio",
+                    "fratello": "Riccio",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Paone",
+                    "fratello": "Bettia R",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Paone",
+                    "fratello": "Suranga",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Pellegrino",
+                    "fratello": "Smedile V",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Pellegrino",
+                    "fratello": "Rinaldo",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Quagliata Maria",
+                    "fratello": "Fasone",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Quagliata Maria",
+                    "fratello": "Minutoli",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Romeo Maria",
+                    "fratello": "Bettia A",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Stramandino",
+                    "fratello": "Neri R",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Stramandino",
+                    "fratello": "Arena",
+                    "slot": 1
+                },
+                {
+                    "famiglia": "Valenti Maria",
+                    "fratello": "Urdi",
+                    "slot": 0
+                },
+                {
+                    "famiglia": "Valenti Maria",
+                    "fratello": "Milanese",
+                    "slot": 1
+                }
+            ]
+        }
+    ],
+    "indisponibilita": {},
+    "vincoli_personalizzati": [],
+    "week_templates": {},
+    "audit_log": [
+        {
+            "timestamp": "2026-04-27T16:15:22",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Rinaldo Angela"
+        },
+        {
+            "timestamp": "2026-04-27T16:15:53",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Angela Rinaldo"
+        },
+        {
+            "timestamp": "2026-04-27T16:16:08",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Angela Rinaldo"
+        },
+        {
+            "timestamp": "2026-04-27T16:19:39",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Rinaldo Angela"
+        },
+        {
+            "timestamp": "2026-04-27T16:19:55",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Rinaldo Angela"
+        },
+        {
+            "timestamp": "2026-04-27T16:20:17",
+            "azione": "aggiungi_famiglia",
+            "dettagli": "Aggiunta famiglia: Pippo E Pluto"
+        },
+        {
+            "timestamp": "2026-04-27T16:20:37",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Gina Lollobrigida"
+        },
+        {
+            "timestamp": "2026-04-27T16:20:53",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Gina Lollobrigida"
+        },
+        {
+            "timestamp": "2026-04-27T16:21:13",
+            "azione": "rimuovi_famiglia",
+            "dettagli": "Rimossa famiglia: Pippo E Pluto"
+        },
+        {
+            "timestamp": "2026-04-27T16:21:54",
+            "azione": "aggiungi_famiglia",
+            "dettagli": "Aggiunta famiglia: Pippo E Pluto"
+        },
+        {
+            "timestamp": "2026-04-27T16:22:04",
+            "azione": "rimuovi_famiglia",
+            "dettagli": "Rimossa famiglia: Pippo E Pluto"
+        },
+        {
+            "timestamp": "2026-04-27T16:22:16",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Gina Lollobrigida"
+        },
+        {
+            "timestamp": "2026-04-27T16:22:27",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Gina Lollobrigida"
+        },
+        {
+            "timestamp": "2026-04-27T16:22:39",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Gina Lollobrigida"
+        },
+        {
+            "timestamp": "2026-04-27T16:23:31",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Rinaldo Angela"
+        },
+        {
+            "timestamp": "2026-04-27T16:23:38",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Rinaldo Angela"
+        },
+        {
+            "timestamp": "2026-04-27T16:27:26",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Gina Lollobrigida"
+        },
+        {
+            "timestamp": "2026-04-27T16:30:20",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Rinaldo Angela"
+        },
+        {
+            "timestamp": "2026-05-08T21:32:58",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Test Tester"
+        },
+        {
+            "timestamp": "2026-05-08T21:32:58",
+            "azione": "modifica_capacita",
+            "dettagli": "Capacita' Test Tester: 1 -> 2"
+        },
+        {
+            "timestamp": "2026-05-08T21:33:05",
+            "azione": "aggiungi_famiglia",
+            "dettagli": "Aggiunta famiglia: Famiglia Test"
+        },
+        {
+            "timestamp": "2026-05-08T21:33:05",
+            "azione": "modifica_frequenza",
+            "dettagli": "Frequenza Famiglia Test: 2 -> 1"
+        },
+        {
+            "timestamp": "2026-05-08T21:33:10",
+            "azione": "associazione",
+            "dettagli": "Associato Test Tester -> Famiglia Test"
+        },
+        {
+            "timestamp": "2026-05-08T21:33:35",
+            "azione": "aggiungi_indisponibilita",
+            "dettagli": "Indisponibilita' aggiunta: Test Tester per 2026-06"
+        },
+        {
+            "timestamp": "2026-05-08T21:33:35",
+            "azione": "rimuovi_indisponibilita",
+            "dettagli": "Indisponibilita' rimossa: Test Tester per 2026-06"
+        },
+        {
+            "timestamp": "2026-05-08T21:34:02",
+            "azione": "sanificazione",
+            "dettagli": "Dati sanificati con 0 alias"
+        },
+        {
+            "timestamp": "2026-05-08T21:34:06",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Test Tester"
+        },
+        {
+            "timestamp": "2026-05-08T21:34:09",
+            "azione": "rimuovi_famiglia",
+            "dettagli": "Rimossa famiglia: Famiglia Test"
+        },
+        {
+            "timestamp": "2026-05-09T22:35:43",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Po"
+        },
+        {
+            "timestamp": "2026-05-09T22:35:59",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Po"
+        },
+        {
+            "timestamp": "2026-05-09T22:36:04",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Po"
+        },
+        {
+            "timestamp": "2026-05-09T22:36:14",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Po"
+        },
+        {
+            "timestamp": "2026-05-09T22:36:16",
+            "azione": "aggiungi_fratello",
+            "dettagli": "Aggiunto fratello: Po"
+        },
+        {
+            "timestamp": "2026-05-09T22:36:23",
+            "azione": "rimuovi_fratello",
+            "dettagli": "Rimosso fratello: Po"
+        },
+        {
+            "timestamp": "2026-05-11T16:01:38+00:00",
+            "azione": "salva_bozza",
+            "dettagli": "Bozza salvata per 2026-05, 2026-06, 2026-07 (66 assegnazioni)",
+            "utente": "sistema"
+        },
+        {
+            "timestamp": "2026-05-11T16:03:04+00:00",
+            "azione": "salva_bozza",
+            "dettagli": "Bozza salvata per 2026-05, 2026-06, 2026-07 (66 assegnazioni)",
+            "utente": "sistema"
+        },
+        {
+            "timestamp": "2026-05-11T16:09:38+00:00",
+            "azione": "conferma_turni",
+            "dettagli": "Confermati turni mese 2026-02 (22 assegnazioni)",
+            "utente": "sistema"
+        },
+        {
+            "timestamp": "2026-05-11T16:09:38+00:00",
+            "azione": "conferma_turni",
+            "dettagli": "Confermati turni mese 2026-03 (22 assegnazioni)",
+            "utente": "sistema"
+        },
+        {
+            "timestamp": "2026-05-11T16:09:38+00:00",
+            "azione": "conferma_turni",
+            "dettagli": "Confermati turni mese 2026-04 (22 assegnazioni)",
+            "utente": "sistema"
+        },
+        {
+            "timestamp": "2026-05-11T16:38:29+00:00",
+            "azione": "salva_bozza",
+            "dettagli": "Bozza salvata per 2026-05, 2026-06 (44 assegnazioni)",
+            "utente": "sistema"
+        },
+        {
+            "timestamp": "2026-05-11T16:38:29+00:00",
+            "azione": "scarta_bozza",
+            "dettagli": "Bozza scartata",
+            "utente": "sistema"
+        }
+    ],
+    "affinita": [],
+    "bozza_turni": null
 }
